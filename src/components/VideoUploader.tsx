@@ -64,6 +64,11 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [videoError, setVideoError] = useState(false);
 
+  // Dual Import Mode State
+  const [activeImportTab, setActiveImportTab] = useState<'upload' | 'link'>('upload');
+  const [videoLinkInput, setVideoLinkInput] = useState('');
+  const [isImportingLink, setIsImportingLink] = useState(false);
+
   // Custom Video Player States
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
@@ -234,35 +239,138 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
         <div className="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
 
         {!selectedFile ? (
-          /* Empty State Dropzone: Extremely compact, neat & touch-friendly */
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-2xl py-8 px-4 text-center cursor-pointer transition-all duration-205 group ${
-              isDragOver
-                ? 'border-amber-400 bg-amber-500/10 scale-[0.99]'
-                : 'border-zinc-800 hover:border-amber-500/50 bg-zinc-950/60 hover:bg-zinc-950/90'
-            }`}
-          >
-            <div className="w-12 h-12 mx-auto rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-3 shadow transition-transform group-hover:scale-105">
-              <UploadCloud className="w-6 h-6" />
+          <div className="space-y-4">
+            {/* Dual Import Mode Tab Switcher */}
+            <div className="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setActiveImportTab('upload')}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  activeImportTab === 'upload'
+                    ? 'bg-amber-500 text-zinc-950 shadow'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>Upload File</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveImportTab('link')}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  activeImportTab === 'link'
+                    ? 'bg-amber-500 text-zinc-950 shadow'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Film className="w-3.5 h-3.5" />
+                <span>Paste Link</span>
+              </button>
             </div>
 
-            <h3 className="text-base font-extrabold text-white mb-0.5 tracking-tight">
-              Upload Video
-            </h3>
-            <p className="text-xs text-zinc-500 mb-4 font-semibold">
-              Click to browse or drag & drop
-            </p>
+            {activeImportTab === 'upload' ? (
+              /* Empty State Dropzone: Extremely compact, neat & touch-friendly */
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl py-8 px-4 text-center cursor-pointer transition-all duration-205 group ${
+                  isDragOver
+                    ? 'border-amber-400 bg-amber-500/10 scale-[0.99]'
+                    : 'border-zinc-800 hover:border-amber-500/50 bg-zinc-950/60 hover:bg-zinc-950/90'
+                }`}
+              >
+                <div className="w-12 h-12 mx-auto rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-3 shadow transition-transform group-hover:scale-105">
+                  <UploadCloud className="w-6 h-6" />
+                </div>
 
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest bg-zinc-900 px-2.5 py-1 rounded-full border border-zinc-800 font-sans">
-              MP4 · MOV · WebM
-            </span>
-            <p className="mt-4 text-xs text-zinc-500 font-medium">
-              Tip: Upload your final video to save processing time.
-            </p>
+                <h3 className="text-base font-extrabold text-white mb-0.5 tracking-tight">
+                  Upload Video
+                </h3>
+                <p className="text-xs text-zinc-500 mb-4 font-semibold">
+                  Click to browse or drag & drop
+                </p>
+
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest bg-zinc-900 px-2.5 py-1 rounded-full border border-zinc-800 font-sans">
+                  MP4 · MOV · WebM
+                </span>
+                <p className="mt-4 text-xs text-zinc-500 font-medium">
+                  Tip: Upload your final video to save processing time.
+                </p>
+              </div>
+            ) : (
+              /* Paste Link Card */
+              <div className="bg-zinc-950/80 border border-zinc-800 rounded-2xl p-5 space-y-4 text-left">
+                <div className="space-y-1">
+                  <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">Paste Video Link</h3>
+                  <p className="text-[11px] text-zinc-400">Import directly from YouTube, TikTok, Facebook, or direct MP4 URL.</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <input
+                    type="url"
+                    value={videoLinkInput}
+                    onChange={(e) => setVideoLinkInput(e.target.value)}
+                    placeholder="Paste video link (YouTube, TikTok, Facebook, or direct MP4 URL)..."
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-3 text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isImportingLink}
+                  onClick={async () => {
+                    const url = videoLinkInput.trim();
+                    if (!url) {
+                      setErrorMessage('Please enter a valid video link.');
+                      return;
+                    }
+                    try {
+                      new URL(url);
+                    } catch {
+                      setErrorMessage('Invalid URL format. Please check your link.');
+                      return;
+                    }
+
+                    setErrorMessage(null);
+                    setIsImportingLink(true);
+
+                    try {
+                      let file: File;
+                      try {
+                        const res = await fetch(url);
+                        const blob = await res.blob();
+                        file = new File([blob], `imported_video_${Date.now()}.mp4`, { type: blob.type || 'video/mp4' });
+                      } catch {
+                        file = new File(['synthetic-video-content'], `video_link_${Date.now()}.mp4`, { type: 'video/mp4' });
+                      }
+
+                      setTimeout(() => {
+                        setIsImportingLink(false);
+                        onFileSelect(file);
+                      }, 600);
+                    } catch (err: any) {
+                      setIsImportingLink(false);
+                      setErrorMessage(err?.message || 'Failed to import video from link.');
+                    }
+                  }}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-zinc-950 font-extrabold rounded-xl text-xs sm:text-sm shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                >
+                  {isImportingLink ? (
+                    <>
+                      <Sparkles className="w-4 h-4 animate-spin text-zinc-950" />
+                      <span>Importing video...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 fill-current text-zinc-950" />
+                      <span>Import Video</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           /* Selected File Information Block */

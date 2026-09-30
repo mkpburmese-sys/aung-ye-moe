@@ -437,3 +437,30 @@ export const translations = {
   }
 };
 
+export const TOOL_DESCRIPTIONS = {
+  movieRecap: {
+    en: "AI-powered movie recap from video.",
+    my: "ဗီဒီယိုကနေ AI နဲ့ Movie Recap ပြုလုပ်ပါ။"
+  },
+  voiceGenerator: {
+    en: "Convert text into natural AI voice.",
+    my: "စာသားကို သဘာဝကျတဲ့ AI အသံအဖြစ် ပြောင်းပါ။"
+  },
+  videoAnalyzer: {
+    en: "Analyze videos and generate scene-by-scene AI video prompts.",
+    my: "ဗီဒီယိုကို ခွဲခြမ်းပြီး Scene အလိုက် AI Video Prompts ထုတ်ပါ။"
+  },
+  textToImage: {
+    en: "Create AI images from text.",
+    my: "စာသားရေးပြီး AI ပုံများ ဖန်တီးပါ။"
+  },
+  thumbnailCreator: {
+    en: "Create eye-catching AI thumbnails.",
+    my: "ဆွဲဆောင်မှုရှိတဲ့ AI Thumbnail များ ဖန်တီးပါ။"
+  },
+  storyPromptMaker: {
+    en: "Turn stories into scene-by-scene AI prompts.",
+    my: "Story / Script ကို Scene အလိုက် AI Prompts အဖြစ် ပြောင်းပါ။"
+  }
+};
+

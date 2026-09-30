@@ -1510,23 +1510,23 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
         </div>
 
         {/* Video Player Live Screen (AI Voiceover Directly Merged & Synced) */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 sm:p-5 shadow-2xl space-y-4">
-          <div className="space-y-1 min-w-0">
-            <h2 className="text-sm sm:text-base font-extrabold text-white truncate">{recapTitle}</h2>
-            <p className="text-[11px] text-zinc-400">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 sm:p-4 shadow-2xl space-y-3">
+          <div className="space-y-0.5 min-w-0">
+            <h2 className="text-xs sm:text-sm font-extrabold text-white truncate">{recapTitle}</h2>
+            <p className="text-[10px] text-zinc-400">
               Original audio muted · AI Voiceover synchronized directly with video playback
             </p>
           </div>
 
           {/* Render Player with All Applied Edits */}
-          <div className="flex justify-center bg-zinc-950/90 p-2 sm:p-4 rounded-2xl border border-zinc-800/80 overflow-hidden shadow-inner">
+          <div className="flex justify-center bg-zinc-950/90 p-2 sm:p-3 rounded-2xl border border-zinc-800/80 overflow-hidden shadow-inner">
             <div
-              className={`relative rounded-xl overflow-hidden bg-black border border-zinc-800 shadow-2xl transition-all duration-300 ${
+              className={`relative rounded-xl overflow-hidden bg-black border border-zinc-800 shadow-2xl transition-all duration-300 mx-auto ${
                 aspectRatio === '9:16'
-                  ? 'w-full max-w-[240px] sm:max-w-[320px] aspect-[9/16] max-h-[480px]'
+                  ? 'w-full max-w-[200px] sm:max-w-[240px] aspect-[9/16] max-h-[40vh]'
                   : aspectRatio === '1:1'
-                  ? 'w-full max-w-[340px] sm:max-w-[400px] aspect-square max-h-[400px]'
-                  : 'w-full max-w-[540px] sm:max-w-full aspect-video max-h-[380px]'
+                  ? 'w-full max-w-[280px] sm:max-w-[320px] aspect-square max-h-[40vh]'
+                  : 'w-full max-w-[480px] sm:max-w-[560px] aspect-video max-h-[40vh]'
               }`}
             >
               {videoMetadata?.sourceType === 'youtube' && videoMetadata?.videoId ? (

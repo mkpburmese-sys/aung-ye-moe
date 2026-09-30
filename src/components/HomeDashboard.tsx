@@ -201,7 +201,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               <div
                 key={tool.id}
                 onClick={() => handleCardClick(tool.id)}
-                className={`group relative overflow-hidden rounded-2xl p-3.5 sm:p-4 flex flex-col items-start gap-3 bg-zinc-900/90 hover:bg-zinc-800/80 border transition-all duration-200 cursor-pointer shadow-sm active:scale-[0.98] select-none text-left ${
+                className={`group relative overflow-hidden rounded-2xl p-3.5 sm:p-4 flex flex-col items-start gap-2.5 sm:gap-3 bg-zinc-900/90 hover:bg-zinc-800/80 border transition-all duration-200 cursor-pointer shadow-sm active:scale-[0.98] select-none text-left ${
                   isLocked 
                     ? 'border-zinc-800 hover:border-amber-500/40 opacity-90' 
                     : 'border-zinc-800 hover:border-orange-500/30'
@@ -210,14 +210,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 {/* Subtle Ambient Background Glow on Hover */}
                 <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/[0.02] rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/[0.05] transition-all" />
 
-                {/* Top Row: Left Tool Icon + Right Badge (Flex items-center justify-between w-full) */}
+                {/* Top Row: Left Tool Icon + Right Badge */}
                 <div className="flex items-center justify-between w-full gap-2">
                   {/* Icon Container */}
                   <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center text-amber-500 shadow-sm transition-all duration-200 group-hover:bg-gradient-to-br group-hover:from-amber-500 group-hover:to-orange-600 group-hover:text-white group-hover:scale-105 shrink-0">
                     <Icon className="w-5 h-5" />
                   </div>
 
-                  {/* Right Badge: Lock Badge if locked, else feature badge if present */}
+                  {/* Right Badge: Lock Badge if locked, else feature badge if present and user is NOT logged in */}
                   {isLocked ? (
                     <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-zinc-950/90 border border-amber-500/40 text-[10px] font-bold text-amber-400 shadow-sm leading-none whitespace-nowrap">
                       <Lock className="w-2.5 h-2.5 text-amber-400 shrink-0" />
@@ -226,7 +226,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                       </span>
                     </div>
                   ) : (
-                    tool.badge && (
+                    !user && tool.badge && (
                       <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md leading-none whitespace-nowrap border shadow-sm ${tool.badge.className}`}>
                         {tool.badge.text}
                       </div>
@@ -234,14 +234,11 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   )}
                 </div>
 
-                {/* Information Info Block */}
-                <div className="space-y-1 w-full">
-                  <h3 className="text-sm font-semibold text-white tracking-wide transition-colors line-clamp-1 group-hover:text-amber-400">
+                {/* Information Info Block (Title only, no truncation) */}
+                <div className="w-full">
+                  <h3 className="text-xs sm:text-sm font-bold text-white tracking-wide transition-colors group-hover:text-amber-400 leading-snug">
                     {tool.title}
                   </h3>
-                  <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
-                    {tool.shortDesc}
-                  </p>
                 </div>
               </div>
             );
