@@ -1,0 +1,6 @@
+{
+  "name": "MKP VidPrompts Master",
+  "description": "AI-powered video analysis, scene detection, character bible extraction, and prompt recreation for AI Fruit Stories and animated video creators.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
