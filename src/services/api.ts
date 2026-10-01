@@ -461,7 +461,7 @@ export async function analyzeVideoWithGemini(params: {
       status: 200,
       errorCode: json?.errorType || 'OUTPUT_UNAVAILABLE',
       message: rawError,
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3.8-flash',
       file: {
         name: fileName,
         size: fileSize,
@@ -495,7 +495,7 @@ export async function analyzeVideoWithGemini(params: {
 
   // Development success console logging
   logVideoAnalysisDetails({
-    model: 'gemini-2.0-flash',
+    model: 'gemini-3.8-flash',
     fileSize,
     duration,
     mimeType: videoMime,

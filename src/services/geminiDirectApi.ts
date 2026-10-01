@@ -30,7 +30,7 @@ export async function directGeminiGenerateContent(
     throw new Error('MISSING_API_KEY: Please provide a valid Gemini API key.');
   }
 
-  const model = options.model || 'gemini-2.5-flash';
+  const model = options.model || 'gemini-3.8-flash';
   const url = `${GEMINI_BASE_URL}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
   const bodyPayload: any = {

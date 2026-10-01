@@ -368,13 +368,9 @@ app.post('/api/test-key', async (req, res) => {
   }
 
   // List of active models to test in priority order.
-  // Note: Google has deprecated gemini-1.5-flash and gemini-2.5-flash for new users in v1beta,
-  // recommending gemini-3.8-flash or gemini-flash-latest.
   const candidateModels = [
     'gemini-3.8-flash',
     'gemini-flash-latest',
-    'gemini-2.5-flash',
-    'gemini-1.5-flash',
   ];
 
   let lastErrorData: any = null;
@@ -463,7 +459,7 @@ app.post('/api/analyze-video', upload.single('video'), async (req, res) => {
   const promptMode = req.body?.promptMode || 'Analyze Original';
   const frames = req.body?.frames;
 
-  let modelName = 'gemini-2.0-flash';
+  let modelName = 'gemini-3.8-flash';
   let uploadedGeminiFileName: string | null = null;
   let uploadedGeminiFileUri: string | null = null;
   let uploadedGeminiFileMime: string | null = null;
@@ -640,7 +636,7 @@ Provide structured JSON with:
   ]
 }`;
 
-    modelName = req.body?.modelName || 'gemini-2.0-flash';
+    modelName = req.body?.modelName || 'gemini-3.8-flash';
     const fileName = req.file?.originalname || metadata?.name || 'Uploaded Video';
     const fileSize = req.file
       ? `${(req.file.size / (1024 * 1024)).toFixed(2)} MB`
@@ -1211,7 +1207,7 @@ Regenerate and return a JSON object with:
 }`;
 
     const response = await ai.models.generateContent({
-      model: req.body?.modelName || 'gemini-2.0-flash',
+      model: req.body?.modelName || 'gemini-3.8-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -1270,7 +1266,7 @@ Return the FULL updated project JSON with the exact same top-level structure:
 }`;
 
     const response = await ai.models.generateContent({
-      model: req.body?.modelName || 'gemini-2.0-flash',
+      model: req.body?.modelName || 'gemini-3.8-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -1413,7 +1409,7 @@ Return valid JSON with schema:
 }`;
 
     const response = await ai.models.generateContent({
-      model: req.body?.modelName || 'gemini-2.0-flash',
+      model: req.body?.modelName || 'gemini-3.8-flash',
       contents: promptText,
       config: {
         systemInstruction,
@@ -1473,7 +1469,7 @@ Return valid JSON:
 }`;
 
     const response = await ai.models.generateContent({
-      model: req.body?.modelName || 'gemini-2.0-flash',
+      model: req.body?.modelName || 'gemini-3.8-flash',
       contents: promptText,
       config: {
         responseMimeType: 'application/json',
@@ -1594,7 +1590,7 @@ Return JSON schema:
 }`;
 
     const response = await ai.models.generateContent({
-      model: req.body?.modelName || 'gemini-2.0-flash',
+      model: req.body?.modelName || 'gemini-3.8-flash',
       contents: promptText,
       config: {
         systemInstruction,
@@ -1623,7 +1619,7 @@ app.post('/api/translate-description', async (req, res) => {
 
     const ai = getGenAIClient(userApiKey);
     const response = await ai.models.generateContent({
-      model: req.body?.modelName || 'gemini-2.0-flash',
+      model: req.body?.modelName || 'gemini-3.8-flash',
       contents: `Translate the following character description from Myanmar (Burmese) or any language into a natural, detailed English AI image generation prompt. Preserve all visual details (gender, hair, skin, build, clothing, colors, accessories) accurately without inventing unstated facts. Output ONLY the English prompt description.\n\nDescription: "${description}"`,
     });
 
@@ -1661,7 +1657,7 @@ Return a valid JSON object strictly following this schema:
 }`;
 
     const response = await ai.models.generateContent({
-      model: req.body?.modelName || 'gemini-2.0-flash',
+      model: req.body?.modelName || 'gemini-3.8-flash',
       contents: promptText,
       config: {
         systemInstruction,
@@ -1760,7 +1756,7 @@ Return a valid JSON object matching this structure:
   "aiReasoning": "Applied punchy golden-yellow typography with bold black stroke and deep shadow at top-center to maximize mobile visibility and avoid YouTube timestamp badge."
 }`;
 
-    const modelToUse = req.body?.modelName || 'gemini-2.5-flash';
+    const modelToUse = req.body?.modelName || 'gemini-3.8-flash';
     let response;
     try {
       response = await ai.models.generateContent({
@@ -1773,9 +1769,9 @@ Return a valid JSON object matching this structure:
         },
       });
     } catch (modelErr: any) {
-      console.warn(`Primary model ${modelToUse} failed, falling back to gemini-2.5-flash:`, modelErr?.message);
+      console.warn(`Primary model ${modelToUse} failed, falling back to gemini-3.8-flash:`, modelErr?.message);
       response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: promptText,
         config: {
           systemInstruction,
@@ -1867,9 +1863,9 @@ Return a valid JSON object strictly matching this schema:
         },
       });
     } catch (modelErr: any) {
-      console.warn(`Primary model ${modelToUse} failed, falling back to gemini-2.5-flash:`, modelErr?.message);
+      console.warn(`Primary model ${modelToUse} failed, falling back to gemini-flash-latest:`, modelErr?.message);
       response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-flash-latest',
         contents: promptText,
         config: {
           systemInstruction,
