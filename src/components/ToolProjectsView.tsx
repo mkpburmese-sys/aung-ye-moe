@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, FolderOpen, Trash2, ArrowRight, Video, Mic, Image as ImageIcon, BookOpen, Clock, Calendar } from 'lucide-react';
 import { ProjectData } from '../types';
 import { Language, translations } from '../utils/i18n';
+import { isProjectEmpty } from '../utils/projectValidation';
 import { CreationCard } from './CreationCard';
 import { PageHeader } from './PageHeader';
 
@@ -30,8 +31,11 @@ export const ToolProjectsView: React.FC<ToolProjectsViewProps> = ({
 }) => {
   const t = translations[language];
 
-  // Filter projects strictly by projectType
+  // Filter projects strictly by projectType and exclude empty projects
   const filteredProjects = projects.filter((p) => {
+    if (isProjectEmpty(p)) {
+      return false;
+    }
     if (!p.projectType) {
       // Default legacy projects go to video-prompts
       return toolType === 'video-prompts';

@@ -29,6 +29,7 @@ import { copyToClipboard, exportScenePromptsBundle } from '../utils/exportUtils'
 import { Language, translations } from '../utils/i18n';
 import { CharacterBibleCard } from './CharacterBibleCard';
 import { PageHeader } from './PageHeader';
+import { isProjectEmpty } from '../utils/projectValidation';
 
 interface StoryPromptMakerProps {
   project?: ProjectData | null;
@@ -235,6 +236,39 @@ export const StoryPromptMaker: React.FC<StoryPromptMakerProps> = ({
     }
   };
 
+  // Back Navigation with Empty Project Check
+  const handleBackWithCheck = () => {
+    if (!onBack) return;
+    const currentSnapshot: ProjectData = {
+      id: project?.id || `proj_${Date.now()}`,
+      projectType: 'story-prompts',
+      createdAt: project?.createdAt || Date.now(),
+      updatedAt: Date.now(),
+      promptMode: 'Analyze Original',
+      storyDuration: selectedDuration,
+      storyScript: storyScript,
+      project: {
+        title: project?.project?.title || 'New Story Project',
+        aspect_ratio: selectedRatio,
+        output_aspect_ratio: selectedRatio,
+        visual_style: selectedStyle,
+        master_style_prompt: `${selectedStyle} style, high quality, consistent character visuals`,
+        negative_prompt: 'blurry, watermark, text, low quality, artifacts, distorted proportions',
+      },
+      characters: project?.characters || [],
+      scenes: scenes,
+      storyAnalysis: project?.storyAnalysis,
+    };
+
+    // Only save if the user added content (scenes, characters, or story context)
+    if (!isProjectEmpty(currentSnapshot)) {
+      onSaveProject(currentSnapshot).catch((err) => {
+        console.warn('Auto-save on back error:', err);
+      });
+    }
+    onBack();
+  };
+
   // -------------------------------------------------------------
   // 1. NEW STORY / EDIT STORY FORM VIEW (COMPACT ACCORDIONS)
   // -------------------------------------------------------------
@@ -244,7 +278,7 @@ export const StoryPromptMaker: React.FC<StoryPromptMakerProps> = ({
         {/* Navigation & Header */}
         <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
           {onBack ? (
-            <PageHeader title="Story Prompt Maker" onBack={onBack} />
+            <PageHeader title="Story Prompt Maker" onBack={handleBackWithCheck} />
           ) : (
             <div className="flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-amber-400" />
@@ -522,7 +556,7 @@ export const StoryPromptMaker: React.FC<StoryPromptMakerProps> = ({
             {onBack && (
               <button
                 type="button"
-                onClick={onBack}
+                onClick={handleBackWithCheck}
                 className="p-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 transition-colors cursor-pointer"
                 title="Back to Projects"
               >

@@ -33,6 +33,7 @@ import { PhotoThumbnailCreator } from './components/PhotoThumbnailCreator';
 import { MovieRecapStudio } from './components/MovieRecapStudio';
 import { TextToImageStudio } from './components/TextToImageStudio';
 import { getDetectedRatioLabel } from './components/VideoUploader';
+import { isProjectEmpty } from './utils/projectValidation';
 import {
   AspectRatioType,
   OutputAspectRatioType,
@@ -309,33 +310,23 @@ export default function App() {
   // Instant Offline Local Cache Restoration on initial mount
   useEffect(() => {
     const { projects: cachedProjects, lastActiveProjectId } = loadProjectsFromLocalCache();
-    if (cachedProjects.length > 0) {
-      console.log(`[Cache] Restored ${cachedProjects.length} projects instantly from local cache`);
-      setSavedProjects(cachedProjects);
+    const validProjects = cachedProjects.filter((p) => !isProjectEmpty(p));
+    if (validProjects.length > 0) {
+      console.log(`[Cache] Restored ${validProjects.length} valid projects from local cache`);
+      setSavedProjects(validProjects);
       if (lastActiveProjectId) {
-        const found = cachedProjects.find((p) => p.id === lastActiveProjectId);
+        const found = validProjects.find((p) => p.id === lastActiveProjectId);
         if (found) {
           setCurrentProject(found);
         } else {
-          setCurrentProject(cachedProjects[0]);
+          setCurrentProject(validProjects[0]);
         }
       } else {
-        setCurrentProject(cachedProjects[0]);
+        setCurrentProject(validProjects[0]);
       }
     } else {
-      const lastActiveId = localStorage.getItem('mkp_vidprompts_last_active_project_id');
-      if (lastActiveId) {
-        const autoSavedRaw = localStorage.getItem(`mkp_vidprompts_autosave_${lastActiveId}`);
-        if (autoSavedRaw) {
-          try {
-            const parsed = JSON.parse(autoSavedRaw);
-            setCurrentProject(parsed);
-            setSavedProjects([parsed]);
-          } catch (e) {
-            console.warn('Error reading autosaved project:', e);
-          }
-        }
-      }
+      setSavedProjects([]);
+      setCurrentProject(null);
     }
   }, []);
 
@@ -450,6 +441,12 @@ export default function App() {
 
   // Instant local state update for fast UI feel
   const persistProject = async (proj: ProjectData) => {
+    // Condition for Saving: Check if project is empty. If empty, do NOT save to recent projects list!
+    if (isProjectEmpty(proj)) {
+      setCurrentProject(proj);
+      return;
+    }
+
     const updated: ProjectData = {
       ...proj,
       ownerUid: user ? user.uid : proj.ownerUid,
@@ -458,10 +455,12 @@ export default function App() {
     };
     setCurrentProject(updated);
     setSavedProjects((prev) => {
-      const exists = prev.some((p) => p.id === updated.id);
+      // Filter out any empty projects while updating list
+      const cleaned = prev.filter((p) => p.id === updated.id || !isProjectEmpty(p));
+      const exists = cleaned.some((p) => p.id === updated.id);
       const nextList = exists
-        ? prev.map((p) => (p.id === updated.id ? updated : p))
-        : [updated, ...prev];
+        ? cleaned.map((p) => (p.id === updated.id ? updated : p))
+        : [updated, ...cleaned];
       saveProjectsToLocalCache(nextList, updated.id);
       return nextList;
     });
@@ -488,7 +487,7 @@ export default function App() {
 
   // Debounced Auto-Save to LocalStorage, Google Drive, and Firebase Firestore to prevent data loss and optimize quotas
   useEffect(() => {
-    if (!currentProject) return;
+    if (!currentProject || isProjectEmpty(currentProject)) return;
 
     // 1. Instant, synchronous local storage auto-save (offline protection)
     try {
@@ -826,7 +825,6 @@ export default function App() {
         characters: [],
         scenes: [],
       };
-      persistProject(newProj);
       setCurrentProject(newProj);
       setEditorSubView('prompts');
       setCurrentTab('editor');
@@ -892,7 +890,6 @@ export default function App() {
         characters: [],
         scenes: [],
       };
-      persistProject(newProj);
       setCurrentProject(newProj);
       setEditorSubView('prompts');
       setCurrentTab('editor');
@@ -914,7 +911,6 @@ export default function App() {
       characters: [],
       scenes: [],
     };
-    persistProject(newProj);
     setCurrentProject(newProj);
     setCurrentTab('editor');
   };
@@ -1326,7 +1322,15 @@ export default function App() {
                   await persistProject(proj);
                   setCurrentProject(proj);
                 }}
-                onBack={() => setCurrentTab('thumbnail_tool')}
+                onBack={() => {
+                  if (currentProject && isProjectEmpty(currentProject)) {
+                    try {
+                      localStorage.removeItem(`mkp_vidprompts_autosave_${currentProject.id}`);
+                    } catch (_) {}
+                    setCurrentProject(null);
+                  }
+                  setCurrentTab('thumbnail_tool');
+                }}
                 language={language}
                 driveSyncState={driveSyncState}
                 isDriveConnected={isDriveConnected}
@@ -1360,7 +1364,15 @@ export default function App() {
                     setCurrentProject(proj);
                   }}
                   onOpenThumbnailStudio={() => setEditorSubView('title_thumbnail')}
-                  onBack={() => setCurrentTab('story_prompts_tool')}
+                  onBack={() => {
+                    if (currentProject && isProjectEmpty(currentProject)) {
+                      try {
+                        localStorage.removeItem(`mkp_vidprompts_autosave_${currentProject.id}`);
+                      } catch (_) {}
+                      setCurrentProject(null);
+                    }
+                    setCurrentTab('story_prompts_tool');
+                  }}
                   language={language}
                   onOpenApiKeySettings={() => setCurrentTab('settings')}
                 />

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FolderOpen, PlusCircle, Trash2, Calendar, Film, ArrowRight, MoreVertical, Edit2 } from 'lucide-react';
 import { ProjectData } from '../types';
 import { Language, translations } from '../utils/i18n';
+import { isProjectEmpty } from '../utils/projectValidation';
 
 interface ProjectsViewProps {
   currentProject: ProjectData | null;
@@ -27,12 +28,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitleText, setEditTitleText] = useState('');
 
-  // Sort saved projects by updated/created descending (most recent first)
-  const sortedProjects = [...savedProjects].sort((a, b) => {
-    const timeA = a.updatedAt || a.createdAt || 0;
-    const timeB = b.updatedAt || b.createdAt || 0;
-    return timeB - timeA;
-  });
+  // Sort saved projects by updated/created descending (most recent first) and exclude empty projects
+  const sortedProjects = [...savedProjects]
+    .filter((p) => !isProjectEmpty(p))
+    .sort((a, b) => {
+      const timeA = a.updatedAt || a.createdAt || 0;
+      const timeB = b.updatedAt || b.createdAt || 0;
+      return timeB - timeA;
+    });
 
   const handleStartRename = (proj: ProjectData, e: React.MouseEvent) => {
     e.stopPropagation();

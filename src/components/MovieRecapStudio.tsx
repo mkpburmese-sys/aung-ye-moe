@@ -54,6 +54,8 @@ import {
 import { ProjectData } from '../types';
 import { Language, translations } from '../utils/i18n';
 import { synthesizeGoogleCloudTTS } from '../services/api';
+import { directGeminiGenerateContent } from '../services/geminiDirectApi';
+import { extractDirectMp4Url } from '../services/videoDownloader';
 import { CreationCard } from './CreationCard';
 import { PageHeader } from './PageHeader';
 
@@ -281,10 +283,19 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const [isPlayingFullNarration, setIsPlayingFullNarration] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isDownloadingVideo, setIsDownloadingVideo] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [exportProgress, setExportProgress] = useState<string>('');
   const [videoDuration, setVideoDuration] = useState<number>(0);
   const [synthesizedAudioUrl, setSynthesizedAudioUrl] = useState<string | null>(null);
+
+  // Custom Video Player Unflipped Controls State
+  const [isVideoPlaying, setIsVideoPlaying] = useState<boolean>(false);
+  const [videoCurrentTime, setVideoCurrentTime] = useState<number>(0);
+  const [isVideoMuted, setIsVideoMuted] = useState<boolean>(false);
+
+  const [isResultVideoPlaying, setIsResultVideoPlaying] = useState<boolean>(false);
+  const [resultVideoCurrentTime, setResultVideoCurrentTime] = useState<number>(0);
 
   // Publishing Kit State
   const [generatedVideoTitle, setGeneratedVideoTitle] = useState<string>('Viral Cinematic Movie Recap');
@@ -394,8 +405,41 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} mins`;
   };
 
+  // Toggle Video Play / Pause for Sticky Preview Video Player
+  const toggleVideoPlay = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play().catch(() => {});
+        setIsVideoPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsVideoPlaying(false);
+      }
+    }
+  };
+
+  // Toggle Video Play / Pause for Result Video Player
+  const toggleResultVideoPlay = () => {
+    if (resultVideoRef.current) {
+      if (resultVideoRef.current.paused) {
+        resultVideoRef.current.play().catch(() => {});
+        setIsResultVideoPlaying(true);
+      } else {
+        resultVideoRef.current.pause();
+        setIsResultVideoPlaying(false);
+      }
+    }
+  };
+
+  const handleResultVideoTimeUpdate = () => {
+    if (resultVideoRef.current) {
+      setResultVideoCurrentTime(resultVideoRef.current.currentTime);
+    }
+  };
+
   // Synchronize AI Audio voiceover directly with result video player
   const handleResultVideoPlay = () => {
+    setIsResultVideoPlaying(true);
     if (!synthesizedAudioUrl) return;
     try {
       if (!narrationAudioRef.current) {
@@ -417,6 +461,7 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
   };
 
   const handleResultVideoPause = () => {
+    setIsResultVideoPlaying(false);
     if (narrationAudioRef.current) {
       narrationAudioRef.current.pause();
     }
@@ -435,6 +480,7 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
   };
 
   const handleResultVideoEnded = () => {
+    setIsResultVideoPlaying(false);
     if (narrationAudioRef.current) {
       narrationAudioRef.current.pause();
       narrationAudioRef.current.currentTime = 0;
@@ -569,7 +615,7 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
     }
   };
 
-  const handleUrlImport = () => {
+  const handleUrlImport = async () => {
     if (!videoUrlInput || !videoUrlInput.trim()) {
       setToastMessage('Please enter a valid video link.');
       return;
@@ -581,16 +627,44 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
       return;
     }
 
-    const meta = detectVideoPlatform(trimmed);
-    setVideoFile(null);
-    setVideoUrl(trimmed);
-    setVideoMetadata(meta);
+    setIsDownloadingVideo(true);
+    setToastMessage('Downloading video...');
 
-    if (trimmed.includes('shorts/') || trimmed.includes('tiktok.com') || trimmed.includes('/reel/')) {
-      setAspectRatio('9:16');
+    try {
+      const extracted = await extractDirectMp4Url(trimmed);
+      const meta = detectVideoPlatform(trimmed);
+
+      setVideoFile(null);
+      setVideoUrl(extracted.url);
+      setVideoMetadata({
+        ...meta,
+        sourceType: 'direct',
+        embedUrl: extracted.url,
+      });
+
+      if (trimmed.includes('shorts/') || trimmed.includes('tiktok.com') || trimmed.includes('/reel/')) {
+        setAspectRatio('9:16');
+      } else {
+        const tempVideo = document.createElement('video');
+        tempVideo.src = extracted.url;
+        tempVideo.onloadedmetadata = () => {
+          if (tempVideo.videoHeight > tempVideo.videoWidth * 1.2) {
+            setAspectRatio('9:16');
+          } else if (Math.abs(tempVideo.videoWidth - tempVideo.videoHeight) < 50) {
+            setAspectRatio('1:1');
+          } else {
+            setAspectRatio('16:9');
+          }
+        };
+      }
+
+      setToastMessage(`Downloaded and loaded native video: ${meta.title}`);
+    } catch (err: any) {
+      console.warn('Error downloading video from link:', err);
+      setToastMessage(err?.message || 'Failed to download video from link.');
+    } finally {
+      setIsDownloadingVideo(false);
     }
-
-    setToastMessage(`Imported ${meta.title} successfully!`);
   };
 
   const handleResetVideo = () => {
@@ -868,37 +942,50 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
       setGenerationPercent(50);
       setGenerationStep('Drafting Myanmar narration script...');
 
-      // Call Server Gemini API endpoint for cinematic storytelling narrative
-      const res = await fetch('/api/generate-movie-recap', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-gemini-api-key': apiKey.trim(),
-        },
-        body: JSON.stringify({
-          apiKey: apiKey.trim(),
-          videoTitle: videoLabel,
-          videoLanguage,
-          voiceName: selectedVoiceObj.name,
-          voiceSpeed,
-          aspectRatio,
-        }),
-      });
-
+      // Direct call to Google Gemini REST API using Full Absolute URL
       let finalScript = '';
       let finalTitle = `${videoLabel} (Movie Recap)`;
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.script) {
-          finalScript = data.script;
-        }
-        if (data.videoTitle || data.title) {
-          finalTitle = data.videoTitle || data.title;
-          setGeneratedVideoTitle(data.videoTitle || data.title);
-        }
-        if (data.hashtags && Array.isArray(data.hashtags)) {
-          setGeneratedHashtags(data.hashtags);
+      if (apiKey && apiKey.trim()) {
+        try {
+          const recapPrompt = `You are a professional Movie Recap narrator for viral videos and cinematic storytelling.
+Write an engaging, suspenseful, fast-paced cinematic storyline recap:
+- Video Title / Source: "${videoLabel}"
+- Target Language: "${videoLanguage === 'mm' ? 'Myanmar (Burmese)' : 'English'}"
+- Pacing: ${voiceSpeed}x speed
+- Visual Format: "${aspectRatio}"
+
+Format your script with clear cinematic act markers:
+[00:00 - 00:45] HOOK & MYSTERY: (Opening hook to grab the viewer in 3 seconds)
+[00:45 - 02:00] ESCALATION & BETRAYAL: (High-stakes rising tension and plot twist)
+[02:00 - 03:00] FINAL CLIMAX & TWIST: (Thrilling resolution and ending)
+
+Return a valid JSON object matching this schema:
+{
+  "title": "${videoLabel} - Cinematic Movie Recap",
+  "script": "[00:00 - 00:45] HOOK & MYSTERY:\\n...\\n\\n[00:45 - 02:00] ESCALATION & BETRAYAL:\\n...\\n\\n[02:00 - 03:00] FINAL CLIMAX & TWIST:\\n...",
+  "hashtags": ["#MovieRecap", "#ViralRecap", "#Cinema", "#MKPVidPrompts"]
+}`;
+
+          const rawJson = await directGeminiGenerateContent({
+            apiKey: apiKey.trim(),
+            contents: [{ role: 'user', parts: [{ text: recapPrompt }] }],
+            responseMimeType: 'application/json',
+          });
+
+          const data = JSON.parse(rawJson);
+          if (data.script) {
+            finalScript = data.script;
+          }
+          if (data.videoTitle || data.title) {
+            finalTitle = data.videoTitle || data.title;
+            setGeneratedVideoTitle(data.videoTitle || data.title);
+          }
+          if (data.hashtags && Array.isArray(data.hashtags)) {
+            setGeneratedHashtags(data.hashtags);
+          }
+        } catch (recapErr: any) {
+          console.warn('[MovieRecapStudio] Direct Gemini recap generation fallback to local script:', recapErr?.message || recapErr);
         }
       }
 
@@ -1529,57 +1616,78 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
                   : 'w-full max-w-[480px] sm:max-w-[560px] aspect-video max-h-[40vh]'
               }`}
             >
-              {videoMetadata?.sourceType === 'youtube' && videoMetadata?.videoId ? (
-                <iframe
-                  src={videoMetadata.embedUrl || `https://www.youtube-nocookie.com/embed/${videoMetadata.videoId}`}
-                  className="w-full h-full border-0 transition-transform duration-150"
-                  style={{
-                    transform: videoTransformStyle,
-                    filter: videoFilterStyle,
-                    transformOrigin: 'center center',
-                  }}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  title={recapTitle}
-                />
-              ) : videoMetadata?.sourceType === 'facebook' && videoMetadata?.embedUrl ? (
-                <iframe
-                  src={videoMetadata.embedUrl}
-                  className="w-full h-full border-0 transition-transform duration-150"
-                  style={{
-                    transform: videoTransformStyle,
-                    filter: videoFilterStyle,
-                    transformOrigin: 'center center',
-                  }}
-                  allowFullScreen
-                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                  title="Facebook Video"
-                />
-              ) : (
-                <video
-                  ref={resultVideoRef}
-                  src={videoUrl || undefined}
-                  muted={true}
-                  controls
-                  onPlay={handleResultVideoPlay}
-                  onPause={handleResultVideoPause}
-                  onSeeked={handleResultVideoSeeked}
-                  onRateChange={handleResultVideoRateChange}
-                  onEnded={handleResultVideoEnded}
-                  onLoadedMetadata={(e) => {
-                    const dur = (e.target as HTMLVideoElement).duration;
-                    if (dur && !isNaN(dur)) setVideoDuration(dur);
-                  }}
-                  className={`w-full h-full transition-transform duration-150 ${
-                    videoFitMode === 'cover' ? 'object-cover' : 'object-contain'
+              <video
+                ref={resultVideoRef}
+                src={videoUrl || undefined}
+                muted={true}
+                onClick={toggleResultVideoPlay}
+                onPlay={handleResultVideoPlay}
+                onPause={handleResultVideoPause}
+                onSeeked={handleResultVideoSeeked}
+                onRateChange={handleResultVideoRateChange}
+                onEnded={handleResultVideoEnded}
+                onTimeUpdate={handleResultVideoTimeUpdate}
+                onLoadedMetadata={(e) => {
+                  const dur = (e.target as HTMLVideoElement).duration;
+                  if (dur && !isNaN(dur)) setVideoDuration(dur);
+                }}
+                className={`w-full h-full transition-transform duration-150 cursor-pointer ${
+                  videoFitMode === 'cover' ? 'object-cover' : 'object-contain'
+                }`}
+                style={{
+                  transform: videoTransformStyle,
+                  filter: videoFilterStyle,
+                  transformOrigin: 'center center',
+                }}
+              />
+
+              {/* UNFLIPPED Custom Controls Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                <button
+                  type="button"
+                  onClick={toggleResultVideoPlay}
+                  className={`pointer-events-auto p-3.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-all backdrop-blur-sm shadow-xl active:scale-95 cursor-pointer ${
+                    isResultVideoPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'
                   }`}
-                  style={{
-                    transform: videoTransformStyle,
-                    filter: videoFilterStyle,
-                    transformOrigin: 'center center',
+                  title={isResultVideoPlaying ? 'Pause Video' : 'Play Video'}
+                >
+                  {isResultVideoPlaying ? (
+                    <Pause className="w-6 h-6" />
+                  ) : (
+                    <Play className="w-6 h-6 fill-current ml-0.5" />
+                  )}
+                </button>
+              </div>
+
+              {/* UNFLIPPED Bottom Custom Controls Bar */}
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-2 flex items-center justify-between gap-2 z-20 text-[10px] text-white">
+                <button
+                  type="button"
+                  onClick={toggleResultVideoPlay}
+                  className="p-1 rounded hover:bg-white/20 transition-colors cursor-pointer"
+                  title={isResultVideoPlaying ? 'Pause' : 'Play'}
+                >
+                  {isResultVideoPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max={videoDuration || 100}
+                  step="0.1"
+                  value={resultVideoCurrentTime}
+                  onChange={(e) => {
+                    const time = parseFloat(e.target.value);
+                    setResultVideoCurrentTime(time);
+                    if (resultVideoRef.current) {
+                      resultVideoRef.current.currentTime = time;
+                    }
                   }}
+                  className="flex-1 accent-orange-500 h-1 bg-white/30 rounded-lg cursor-pointer"
                 />
-              )}
+                <span className="font-mono text-[9px] text-zinc-300 shrink-0">
+                  {formatDurationDisplay(resultVideoCurrentTime)} / {formatDurationDisplay(videoDuration)}
+                </span>
+              </div>
 
               {/* Color Temperature Tint */}
               {colorTemperature !== 0 && (
@@ -1598,7 +1706,7 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
               {/* Blur Mask Overlay */}
               {enableBlurMask && (
                 <div
-                  className="absolute pointer-events-none transition-all z-20 border border-amber-400/50 shadow-2xl overflow-hidden"
+                  className="absolute pointer-events-none transition-all z-20 border border-white/20 shadow-2xl overflow-hidden rounded-sm backdrop-blur-md"
                   style={{
                     left: `${blurPosX}%`,
                     top: `${blurPosY}%`,
@@ -1608,12 +1716,10 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
                     backdropFilter: `blur(${blurIntensity}px)`,
                     WebkitBackdropFilter: `blur(${blurIntensity}px)`,
                     backgroundColor: `rgba(0, 0, 0, ${blurTintOpacity / 100})`,
-                    borderRadius: `${blurFeather}px`,
-                    boxShadow: `0 0 ${blurFeather}px rgba(0,0,0,0.6)`,
                   }}
                 >
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="text-[9px] font-mono text-amber-300 font-bold bg-black/70 px-1 py-0.5 rounded opacity-85 select-none">
+                    <span className="bg-black/50 text-white/90 text-[10px] sm:text-xs px-2 py-1 rounded shadow-sm backdrop-blur-md border border-white/10 select-none">
                       Blur Box
                     </span>
                   </div>
@@ -1882,9 +1988,6 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Projects</span>
         </button>
-        <div className="text-[11px] font-mono text-zinc-400">
-          Movie Recap Studio
-        </div>
       </div>
 
       {/* API Missing Warning Banner */}
@@ -1912,14 +2015,6 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
               <Film className="w-3.5 h-3.5 text-orange-400" />
               <span>Source Video Input</span>
             </h2>
-            {!videoUrl && (
-              <button
-                onClick={handleLoadSample}
-                className="text-[10px] sm:text-[11px] font-bold text-orange-400 hover:text-orange-300 bg-orange-500/10 border border-orange-500/20 px-2.5 py-0.5 rounded-lg transition-colors cursor-pointer"
-              >
-                Load Sample Video
-              </button>
-            )}
           </div>
 
           {videoUrl ? (
@@ -1985,47 +2080,92 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
                         : 'w-full max-w-[460px] sm:max-w-full aspect-video max-h-[200px] sm:max-h-[360px]'
                     }`}
                   >
-                    {videoMetadata?.sourceType === 'youtube' && videoMetadata?.videoId ? (
-                      <iframe
-                        src={videoMetadata.embedUrl || `https://www.youtube-nocookie.com/embed/${videoMetadata.videoId}`}
-                        className="w-full h-full border-0 transition-transform duration-150"
-                        style={{
-                          transform: videoTransformStyle,
-                          filter: videoFilterStyle,
-                          transformOrigin: 'center center',
-                        }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                        title={videoMetadata.title}
-                      />
-                    ) : videoMetadata?.sourceType === 'facebook' && videoMetadata?.embedUrl ? (
-                      <iframe
-                        src={videoMetadata.embedUrl}
-                        className="w-full h-full border-0 transition-transform duration-150"
-                        style={{
-                          transform: videoTransformStyle,
-                          filter: videoFilterStyle,
-                          transformOrigin: 'center center',
-                        }}
-                        allowFullScreen
-                        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                        title="Facebook Video"
-                      />
-                    ) : (
-                      <video
-                        ref={videoRef}
-                        src={videoUrl}
-                        controls
-                        className={`w-full h-full transition-transform duration-150 ${
-                          videoFitMode === 'cover' ? 'object-cover' : 'object-contain'
+                    <video
+                      ref={videoRef}
+                      src={videoUrl}
+                      onClick={toggleVideoPlay}
+                      onPlay={() => setIsVideoPlaying(true)}
+                      onPause={() => setIsVideoPlaying(false)}
+                      onEnded={() => setIsVideoPlaying(false)}
+                      onTimeUpdate={() => {
+                        if (videoRef.current) {
+                          setVideoCurrentTime(videoRef.current.currentTime);
+                        }
+                      }}
+                      onLoadedMetadata={(e) => {
+                        const dur = (e.target as HTMLVideoElement).duration;
+                        if (dur && !isNaN(dur)) setVideoDuration(dur);
+                      }}
+                      className={`w-full h-full transition-transform duration-150 cursor-pointer ${
+                        videoFitMode === 'cover' ? 'object-cover' : 'object-contain'
+                      }`}
+                      style={{
+                        transform: videoTransformStyle,
+                        filter: videoFilterStyle,
+                        transformOrigin: 'center center',
+                      }}
+                    />
+
+                    {/* UNFLIPPED Custom Controls Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                      <button
+                        type="button"
+                        onClick={toggleVideoPlay}
+                        className={`pointer-events-auto p-3 sm:p-3.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-all backdrop-blur-sm shadow-xl active:scale-95 cursor-pointer ${
+                          isVideoPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'
                         }`}
-                        style={{
-                          transform: videoTransformStyle,
-                          filter: videoFilterStyle,
-                          transformOrigin: 'center center',
+                        title={isVideoPlaying ? 'Pause Video' : 'Play Video'}
+                      >
+                        {isVideoPlaying ? (
+                          <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
+                        ) : (
+                          <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-current ml-0.5" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* UNFLIPPED Bottom Custom Controls Bar */}
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-2 flex items-center justify-between gap-2 z-20 text-[10px] text-white">
+                      <button
+                        type="button"
+                        onClick={toggleVideoPlay}
+                        className="p-1 rounded hover:bg-white/20 transition-colors cursor-pointer"
+                        title={isVideoPlaying ? 'Pause' : 'Play'}
+                      >
+                        {isVideoPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 fill-current" />}
+                      </button>
+                      <input
+                        type="range"
+                        min="0"
+                        max={videoDuration || 100}
+                        step="0.1"
+                        value={videoCurrentTime}
+                        onChange={(e) => {
+                          const time = parseFloat(e.target.value);
+                          setVideoCurrentTime(time);
+                          if (videoRef.current) {
+                            videoRef.current.currentTime = time;
+                          }
                         }}
+                        className="flex-1 accent-orange-500 h-1 bg-white/30 rounded-lg cursor-pointer"
                       />
-                    )}
+                      <span className="font-mono text-[9px] text-zinc-300 shrink-0">
+                        {formatDurationDisplay(videoCurrentTime)} / {formatDurationDisplay(videoDuration)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (videoRef.current) {
+                            videoRef.current.muted = !videoRef.current.muted;
+                            setIsVideoMuted(videoRef.current.muted);
+                          }
+                        }}
+                        className="p-1 rounded hover:bg-white/20 transition-colors cursor-pointer"
+                        title={isVideoMuted ? 'Unmute' : 'Mute'}
+                      >
+                        {isVideoMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                      </button>
+                    </div>
 
                     {/* Color Temperature Cinematic Overlay Tint */}
                     {colorTemperature !== 0 && (
@@ -2044,7 +2184,7 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
                     {/* Subtitle / Watermark Blur Mask Box Overlay */}
                     {enableBlurMask && (
                       <div
-                        className="absolute pointer-events-none transition-all z-20 border border-amber-400/50 shadow-2xl overflow-hidden"
+                        className="absolute pointer-events-none transition-all z-20 border border-white/20 shadow-2xl overflow-hidden rounded-sm backdrop-blur-md"
                         style={{
                           left: `${blurPosX}%`,
                           top: `${blurPosY}%`,
@@ -2054,12 +2194,10 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
                           backdropFilter: `blur(${blurIntensity}px)`,
                           WebkitBackdropFilter: `blur(${blurIntensity}px)`,
                           backgroundColor: `rgba(0, 0, 0, ${blurTintOpacity / 100})`,
-                          borderRadius: `${blurFeather}px`,
-                          boxShadow: `0 0 ${blurFeather}px rgba(0,0,0,0.6)`,
                         }}
                       >
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <span className="text-[9px] font-mono text-amber-300 font-bold bg-black/70 px-1 py-0.5 rounded opacity-85 select-none">
+                          <span className="bg-black/50 text-white/90 text-[10px] sm:text-xs px-2 py-1 rounded shadow-sm backdrop-blur-md border border-white/10 select-none">
                             Blur ({blurIntensity}px)
                           </span>
                         </div>
@@ -2175,15 +2313,15 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
               {/* Tab 2: Video URL Import */}
               {inputTab === 'url' && (
                 <div className="space-y-3 p-3 sm:p-4 rounded-2xl bg-zinc-950/70 border border-zinc-800 animate-fadeIn">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-zinc-200 flex items-center justify-between">
-                      <span>Paste Video URL</span>
-                      <span className="text-[10px] text-zinc-500">YouTube, TikTok, Facebook</span>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-200 block">
+                      Paste Video URL
                     </label>
                     <div className="flex flex-col sm:flex-row items-stretch gap-1.5">
                       <div className="relative flex-1">
                         <input
                           type="url"
+                          disabled={isDownloadingVideo}
                           value={videoUrlInput}
                           onChange={(e) => setVideoUrlInput(e.target.value)}
                           onKeyDown={(e) => {
@@ -2193,9 +2331,9 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
                             }
                           }}
                           placeholder="Paste YouTube, TikTok, or Facebook video URL..."
-                          className="w-full bg-zinc-900 border border-zinc-700 focus:border-orange-500 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none pr-7 transition-colors"
+                          className="w-full bg-zinc-900 border border-zinc-700 focus:border-orange-500 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none pr-7 transition-colors disabled:opacity-50"
                         />
-                        {videoUrlInput && (
+                        {videoUrlInput && !isDownloadingVideo && (
                           <button
                             type="button"
                             onClick={() => setVideoUrlInput('')}
@@ -2207,29 +2345,29 @@ export const MovieRecapStudio: React.FC<MovieRecapStudioProps> = ({
                       </div>
                       <button
                         type="button"
+                        disabled={isDownloadingVideo}
                         onClick={handleUrlImport}
-                        className="px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 active:scale-95 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0 shadow-xs"
+                        className="px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 active:scale-95 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 shadow-xs disabled:opacity-50"
                       >
-                        <LinkIcon className="w-3 h-3" />
-                        <span>Import</span>
+                        {isDownloadingVideo ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                            <span>Downloading video...</span>
+                          </>
+                        ) : (
+                          <>
+                            <LinkIcon className="w-3 h-3" />
+                            <span>Import</span>
+                          </>
+                        )}
                       </button>
                     </div>
-                  </div>
-
-                  {/* Supported Platforms Indicators */}
-                  <div className="pt-1.5 border-t border-zinc-800/80 flex items-center justify-between flex-wrap gap-1.5 text-[10px] text-zinc-400">
-                    <span className="font-semibold text-zinc-300">Formats:</span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="px-1.5 py-0.5 rounded bg-red-600/10 border border-red-500/20 text-red-400 font-semibold flex items-center gap-1">
-                        <Youtube className="w-2.5 h-2.5" /> YouTube
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded bg-cyan-600/10 border border-cyan-500/20 text-cyan-400 font-semibold flex items-center gap-1">
-                        <Globe className="w-2.5 h-2.5" /> TikTok
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded bg-blue-600/10 border border-blue-500/20 text-blue-400 font-semibold flex items-center gap-1">
-                        <Globe className="w-2.5 h-2.5" /> Facebook
-                      </span>
-                    </div>
+                    {isDownloadingVideo && (
+                      <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs flex items-center gap-2 animate-pulse mt-1.5">
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-orange-400 shrink-0" />
+                        <span>Downloading video... Extracting direct MP4 stream for native playback.</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

@@ -48,8 +48,11 @@ import {
 } from '../types';
 import { fontRegistry } from '../utils/fontRegistry';
 import { Language, translations } from '../utils/i18n';
+import { directGeminiGenerateContent } from '../services/geminiDirectApi';
+import { safeFetchJson } from '../services/safeFetch';
 import { DriveSyncStatusType } from '../services/googleDriveService';
 import { DriveSyncStatus } from './DriveSyncStatus';
+import { isProjectEmpty } from '../utils/projectValidation';
 
 interface PhotoThumbnailCreatorProps {
   project?: ProjectData | null;
@@ -286,79 +289,109 @@ export const PhotoThumbnailCreator: React.FC<PhotoThumbnailCreatorProps> = ({
 
       const effectiveApiKey = apiKey?.trim() || localStorage.getItem('mkp_gemini_api_key')?.trim() || '';
 
-      const res = await fetch('/api/enhance-thumbnail-ai', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(effectiveApiKey ? { 'x-gemini-api-key': effectiveApiKey } : {}),
-        },
-        body: JSON.stringify({
-          headlineText,
-          textLayers,
-          aspectRatio,
-          hasBackgroundImage: !!photoUrl,
-          photoFileName,
-          imageOverlaysCount: imageLayers.length,
-          language,
-          apiKey: effectiveApiKey,
-        }),
-      });
+      let enhancedLayers: any[] | null = null;
+      let aiReasoning: string | null = null;
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'AI enhancement request failed. Please check your API key or quota.');
+      if (effectiveApiKey) {
+        try {
+          const enhancePrompt = `You are a world-class viral YouTube and TikTok thumbnail design director.
+Enhance and optimize these thumbnail text headlines for maximum CTR:
+Headline text: "${headlineText}"
+Aspect Ratio: "${aspectRatio}"
+Existing text layers: ${JSON.stringify(textLayers.map(l => ({ text: l.text, color: l.textColor, size: l.fontSize })))}
+
+Return a valid JSON object matching this structure:
+{
+  "enhancedTextLayers": [
+    {
+      "text": "HIGH IMPACT PUNCHY HEADLINE",
+      "textColor": "#FACC15",
+      "fontSize": 56,
+      "fontWeight": "900",
+      "stroke": true,
+      "strokeColor": "#000000",
+      "strokeWidth": 6,
+      "shadow": true,
+      "shadowColor": "rgba(0,0,0,0.8)",
+      "shadowBlur": 16,
+      "xPercent": 50,
+      "yPercent": 25
+    }
+  ],
+  "reasoning": "High-contrast golden yellow headline with thick dark stroke guarantees maximum visibility across mobile feeds."
+}`;
+
+          const rawJson = await directGeminiGenerateContent({
+            apiKey: effectiveApiKey,
+            contents: [{ role: 'user', parts: [{ text: enhancePrompt }] }],
+            responseMimeType: 'application/json',
+          });
+
+          const parsed = JSON.parse(rawJson);
+          if (parsed.enhancedTextLayers && Array.isArray(parsed.enhancedTextLayers)) {
+            enhancedLayers = parsed.enhancedTextLayers;
+            aiReasoning = parsed.reasoning || null;
+          }
+        } catch (directErr) {
+          console.warn('[PhotoThumbnailCreator] Direct Gemini call error, using local AI style heuristics:', directErr);
+        }
       }
 
-      if (data.enhancedTextLayers && Array.isArray(data.enhancedTextLayers) && data.enhancedTextLayers.length > 0) {
+      if (enhancedLayers && enhancedLayers.length > 0) {
         setTextLayers((prev) => {
-          return data.enhancedTextLayers.map((enh: any, idx: number) => {
+          return enhancedLayers!.map((enh: any, idx: number) => {
             const existing = prev[idx] || prev[0];
+            const validWeight: 'normal' | 'bold' | '900' =
+              enh.fontWeight === 'normal' || enh.fontWeight === 'bold' || enh.fontWeight === '900'
+                ? enh.fontWeight
+                : '900';
+            const validAlign: 'left' | 'center' | 'right' =
+              enh.textAlign === 'left' || enh.textAlign === 'center' || enh.textAlign === 'right'
+                ? enh.textAlign
+                : 'center';
+
             return {
               id: existing?.id || `layer_${idx + 1}`,
               text: enh.text || existing?.text || 'TOP VIRAL DESIGN',
               textColor: enh.textColor || enh.color || '#FACC15',
               color: enh.textColor || enh.color || '#FACC15',
               fontSize: Number(enh.fontSize) || 56,
-              fontWeight: enh.fontWeight || '900',
+              fontWeight: validWeight,
               fontFamily: enh.fontFamily || 'Montserrat',
-              textAlign: enh.textAlign || 'center',
+              textAlign: validAlign,
               xPercent: enh.xPercent !== undefined ? Number(enh.xPercent) : 50,
               yPercent: enh.yPercent !== undefined ? Number(enh.yPercent) : 25,
               widthPercent: enh.widthPercent !== undefined ? Number(enh.widthPercent) : (existing?.widthPercent ?? 85),
               stroke: !!enh.stroke,
-              strokeWidth: enh.stroke ? Number(enh.strokeWidth) || 6 : 0,
               strokeColor: enh.strokeColor || '#000000',
+              strokeWidth: Number(enh.strokeWidth) || 6,
               shadow: !!enh.shadow,
-              shadowBlur: enh.shadow ? Number(enh.shadowBlur) || 14 : 0,
-              shadowOffsetX: Number(enh.shadowOffsetX) || 0,
-              shadowOffsetY: Number(enh.shadowOffsetY) || 4,
-              shadowOpacity: enh.shadowOpacity !== undefined ? Number(enh.shadowOpacity) : 0.9,
-              shadowColor: enh.shadowColor || '#000000',
+              shadowColor: enh.shadowColor || 'rgba(0,0,0,0.8)',
+              shadowBlur: Number(enh.shadowBlur) || 16,
+              shadowOffsetX: 0,
+              shadowOffsetY: 4,
+              shadowOpacity: 0.9,
               glow: !!enh.glow,
-              glowBlur: enh.glow ? Number(enh.glowBlur) || 16 : 0,
               glowColor: enh.glowColor || '#FACC15',
+              glowBlur: Number(enh.glowBlur) || 16,
               backgroundBox: !!enh.backgroundBox,
               boxColor: enh.boxColor || '#000000',
-              boxOpacity: enh.boxOpacity !== undefined ? Number(enh.boxOpacity) : 0.75,
-              boxPadding: enh.backgroundBox ? Number(enh.boxPadding) || 10 : 0,
-              boxRounded: enh.backgroundBox ? Number(enh.boxRounded) || 8 : 0,
+              boxOpacity: 0.75,
+              boxPadding: 10,
+              boxRounded: 8,
             };
           });
         });
+
+        if (aiReasoning) {
+          setAiEnhanceReasoning(aiReasoning);
+        }
+        setIsAiEnhanced(true);
+        setToastMessage(language === 'mm' ? 'AI ဖြင့် Thumbnail စာသားများကို အဆင့်မြှင့်တင်ပြီးပါပြီ!' : 'AI Enhanced Typography successfully applied!');
+        return;
       }
 
-      if (data.photoAdjustments) {
-        if (data.photoAdjustments.brightness) setBrightness(data.photoAdjustments.brightness);
-        if (data.photoAdjustments.contrast) setContrast(data.photoAdjustments.contrast);
-        if (data.photoAdjustments.saturation) setSaturation(data.photoAdjustments.saturation);
-      }
-
-      if (data.aiReasoning) {
-        setAiEnhanceReasoning(data.aiReasoning);
-      }
-
-      setIsAiEnhanced(true);
-      setToastMessage('✨ AI Thumbnail Enhancement applied successfully!');
+      setToastMessage('Could not enhance thumbnail with AI. Check API Key.');
     } catch (err: any) {
       console.error('AI Enhance error:', err);
       setToastMessage(err.message || 'AI Enhancement failed. Please check your Gemini API key in settings.');
@@ -741,6 +774,13 @@ export const PhotoThumbnailCreator: React.FC<PhotoThumbnailCreatorProps> = ({
       ...project,
       photoThumbnailData,
     };
+
+    // A thumbnail project is considered "empty" and SHOULD NOT be saved if:
+    // !backgroundImage && textElements.length === 0 && badges.length === 0
+    if (isProjectEmpty(updated)) {
+      return;
+    }
+
     await onSaveProject(updated);
   }, [
     project,
@@ -758,6 +798,34 @@ export const PhotoThumbnailCreator: React.FC<PhotoThumbnailCreatorProps> = ({
     badges,
     emojis,
     onSaveProject,
+  ]);
+
+  // Auto-save whenever user makes meaningful modifications
+  useEffect(() => {
+    const hasBg = Boolean(photoUrl && photoUrl.trim());
+    const hasText = textLayers.some((l) => l.text && l.text.trim().length > 0);
+    const hasBadges = badges.length > 0 || emojis.length > 0 || imageLayers.length > 0;
+
+    if (hasBg || hasText || hasBadges) {
+      const timer = setTimeout(() => {
+        saveStateToProject();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    photoUrl,
+    imageLayers,
+    textLayers,
+    badges,
+    emojis,
+    aspectRatio,
+    brightness,
+    contrast,
+    saturation,
+    blur,
+    bgRemoved,
+    safeZoneGuide,
+    saveStateToProject,
   ]);
 
   // High-Resolution Export
@@ -983,7 +1051,15 @@ export const PhotoThumbnailCreator: React.FC<PhotoThumbnailCreatorProps> = ({
           {onBack && (
             <button
               type="button"
-              onClick={onBack}
+              onClick={async () => {
+                const hasBg = Boolean(photoUrl && photoUrl.trim());
+                const hasText = textLayers.some((l) => l.text && l.text.trim().length > 0);
+                const hasBadges = badges.length > 0 || emojis.length > 0 || imageLayers.length > 0;
+                if (hasBg || hasText || hasBadges) {
+                  await saveStateToProject();
+                }
+                onBack();
+              }}
               className="p-1.5 sm:p-2 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 transition-colors cursor-pointer"
               title="Back"
             >

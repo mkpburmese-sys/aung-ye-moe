@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, ArrowLeft, Download, RefreshCw, Trash2, Clock, Image as ImageIcon, X, AlertCircle } from 'lucide-react';
 import { Language, translations } from '../utils/i18n';
 import { PageHeader } from './PageHeader';
+import { safeFetchJson } from '../services/safeFetch';
 
 interface GeneratedImageItem {
   id: string;
@@ -151,30 +152,102 @@ export const TextToImageStudio: React.FC<TextToImageStudioProps> = ({
     setIsGenerating(true);
     setGenerationError(null);
 
+    const stringAspectRatio: string = String(aspectRatio);
+
     try {
-      const res = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-gemini-api-key': apiKey.trim(),
-        },
-        body: JSON.stringify({
-          prompt: prompt.trim(),
-          aspectRatio,
-          apiKey: apiKey.trim(),
-        }),
-      });
+      let imageUrl: string | null = null;
 
-      const data = await res.json();
+      // Helper to execute image generation fetch with strict HTTP status and JSON checks
+      const requestImageGeneration = async (endpointUrl: string): Promise<string | null> => {
+        try {
+          const response = await fetch(endpointUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              instances: [{ prompt: prompt.trim() }],
+              parameters: {
+                sampleCount: 1,
+                aspectRatio: stringAspectRatio, // String parameter in parameters
+              },
+              aspectRatio: stringAspectRatio, // String parameter in API request body
+              prompt: prompt.trim(),
+            }),
+          });
 
-      if (!res.ok || !data.imageUrl) {
-        const errorMsg = data.error || 'Failed to generate image.';
-        setGenerationError(errorMsg);
-        setToastMessage(errorMsg);
-        return;
+          const contentType = response.headers.get('content-type');
+
+          if (!response.ok) {
+            const status = response.status;
+            let errorDetail = `API Request failed with status ${status}`;
+
+            if (contentType && contentType.includes('application/json')) {
+              const errJson = await response.json().catch(() => null);
+              errorDetail =
+                errJson?.error?.message ||
+                errJson?.message ||
+                errJson?.error ||
+                errorDetail;
+            } else {
+              const textResp = await response.text().catch(() => '');
+              if (textResp && textResp.includes('<!DOCTYPE')) {
+                errorDetail = `API Request failed with status ${status}. Received HTML instead of JSON. Check the API endpoint URL.`;
+              } else if (textResp && textResp.length < 300) {
+                errorDetail = `${errorDetail}: ${textResp}`;
+              }
+            }
+
+            const error = new Error(errorDetail);
+            (error as any).status = status;
+            throw error;
+          }
+
+          if (!contentType || !contentType.includes('application/json')) {
+            const textResponse = await response.text().catch(() => '');
+            console.error('Non-JSON API Response:', textResponse.slice(0, 300));
+            throw new Error('Received HTML instead of JSON. Check the API endpoint URL.');
+          }
+
+          const data = await response.json();
+          const b64 =
+            data?.predictions?.[0]?.bytesBase64Encoded ||
+            data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+
+          return b64 ? `data:image/png;base64,${b64}` : null;
+        } catch (fetchErr: any) {
+          throw fetchErr;
+        }
+      };
+
+      // 1. Try Direct Google Imagen 3 (imagen-3.0-generate-002) with string aspectRatio parameter
+      try {
+        const imagenUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${encodeURIComponent(apiKey.trim())}`;
+        imageUrl = await requestImageGeneration(imagenUrl);
+      } catch (primaryErr: any) {
+        const status = primaryErr?.status;
+        // If the model returned 429, 503, or 400, rethrow to display specific user-friendly message
+        if (status === 429 || status === 503 || status === 400) {
+          throw primaryErr;
+        }
+        console.warn('Direct Imagen 3.0-002 call error, trying 001 model fallback:', primaryErr?.message);
       }
 
-      const safeUrl = safeBase64ToBlobUrl(data.imageUrl);
+      // 2. Secondary Direct Imagen 3.0-001 fallback with string aspectRatio parameter
+      if (!imageUrl) {
+        try {
+          const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${encodeURIComponent(apiKey.trim())}`;
+          imageUrl = await requestImageGeneration(fallbackUrl);
+        } catch (secondaryErr: any) {
+          throw secondaryErr;
+        }
+      }
+
+      if (!imageUrl) {
+        throw new Error('Failed to generate image. No image data was returned by the model.');
+      }
+
+      const safeUrl = safeBase64ToBlobUrl(imageUrl);
       const newItem: GeneratedImageItem = {
         id: 'img_' + Date.now(),
         imageUrl: safeUrl,
@@ -190,9 +263,60 @@ export const TextToImageStudio: React.FC<TextToImageStudioProps> = ({
       setView('result');
       setToastMessage('✨ Image generated successfully!');
     } catch (err: any) {
-      const errText = err?.message || 'Network error while generating image.';
-      setGenerationError(errText);
-      setToastMessage(errText);
+      console.error('[TextToImageStudio Image Generation Error]:', err);
+      const status = typeof err?.status === 'number' ? err.status : 0;
+      const errMsg = String(err?.message || err || '');
+
+      let userFriendlyMessage: string;
+
+      // Handle 429: Too Many Requests / Rate limit exceeded
+      if (
+        status === 429 ||
+        errMsg.includes('429') ||
+        errMsg.toLowerCase().includes('quota') ||
+        errMsg.toLowerCase().includes('rate limit') ||
+        errMsg.toLowerCase().includes('resource_exhausted')
+      ) {
+        userFriendlyMessage =
+          language === 'mm'
+            ? 'တောင်းဆိုမှုနှုန်း ကန့်သတ်ချက်ပြည့်သွားပါပြီ (429 Rate Limit)။ ခေတ္တစောင့်ဆိုင်းပြီးမှ ပြန်လည်ကြိုးစားပါ။'
+            : 'Rate limit exceeded (429). The model received too many requests. Please wait a moment before trying again.';
+      }
+      // Handle 503: Service Unavailable / Model overloaded
+      else if (
+        status === 503 ||
+        errMsg.includes('503') ||
+        errMsg.toLowerCase().includes('service unavailable') ||
+        errMsg.toLowerCase().includes('overloaded') ||
+        errMsg.toLowerCase().includes('unavailable')
+      ) {
+        userFriendlyMessage =
+          language === 'mm'
+            ? 'AI ပုံဖန်တီးမှု ဝန်ဆောင်မှု ယာယီမအားလပ်သေးပါ (503 Service Unavailable)။ ခေတ္တစောင့်ပြီး ပြန်လည်ကြိုးစားပါ။'
+            : 'AI Image Service is temporarily unavailable or overloaded (503). Please try again in a few moments.';
+      }
+      // Handle 400: Bad Request / Invalid prompt or aspect ratio
+      else if (
+        status === 400 ||
+        errMsg.includes('400') ||
+        errMsg.toLowerCase().includes('bad request') ||
+        errMsg.toLowerCase().includes('invalid') ||
+        errMsg.toLowerCase().includes('invalid_argument')
+      ) {
+        userFriendlyMessage =
+          language === 'mm'
+            ? 'တောင်းဆိုချက် မမှန်ကန်ပါ (400 Bad Request)။ စာသား (Prompt) သို့မဟုတ် ရွေးချယ်ထားသော Aspect Ratio ကို စစ်ဆေးပြီး ပြန်လည်ကြိုးစားပါ။'
+            : 'Invalid request (400). Please check your prompt or selected aspect ratio and try again.';
+      } else {
+        userFriendlyMessage =
+          errMsg ||
+          (language === 'mm'
+            ? 'ပုံဖန်တီးရာတွင် အမှားတစ်ခုဖြစ်ပွားခဲ့ပါသည်။ ကျေးဇူးပြု၍ Gemini API Key ကို စစ်ဆေးပါ။'
+            : 'Failed to generate image. Please check your Gemini API key and try again.');
+      }
+
+      setGenerationError(userFriendlyMessage);
+      setToastMessage(userFriendlyMessage);
     } finally {
       setIsGenerating(false);
     }

@@ -1,3 +1,5 @@
+import { directGeminiGenerateContent } from '../services/geminiDirectApi';
+
 const MM_EN_DICTIONARY: Record<string, string> = {
   'အသက်': 'age',
   'နှစ်အရွယ်': 'year-old',
@@ -49,21 +51,29 @@ export async function translateDescriptionToEnglish(text: string, apiKey?: strin
     return trimmed;
   }
 
-  try {
-    const res = await fetch('/api/translate-description', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(apiKey ? { 'x-gemini-api-key': apiKey.trim() } : {}),
-      },
-      body: JSON.stringify({ description: trimmed }),
-    });
-    const data = await res.json();
-    if (data.success && data.translated) {
-      return data.translated;
+  if (apiKey && apiKey.trim()) {
+    try {
+      const translated = await directGeminiGenerateContent({
+        apiKey: apiKey.trim(),
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                text: `Translate this Burmese character appearance description into concise, visual English prompt keywords.
+Burmese: "${trimmed}"
+Return ONLY the translated English text, nothing else.`,
+              },
+            ],
+          },
+        ],
+      });
+      if (translated && translated.trim()) {
+        return translated.trim();
+      }
+    } catch (e) {
+      console.warn('Direct Gemini translation error, using dictionary fallback:', e);
     }
-  } catch (e) {
-    console.warn('API translation error, using fallback:', e);
   }
 
   let translatedStr = trimmed;

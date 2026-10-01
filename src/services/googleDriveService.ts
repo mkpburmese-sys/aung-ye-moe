@@ -17,6 +17,19 @@ export interface DriveSyncStatusType {
 }
 
 /**
+ * Universal safe JSON parse helper to guard against unexpected HTML/empty payloads
+ */
+async function safeParseJson<T = any>(res: Response): Promise<T> {
+  const contentType = res.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    const textResponse = await res.text().catch(() => '');
+    console.error('Non-JSON Google Drive API Response:', textResponse.slice(0, 300));
+    throw new Error('Received HTML instead of JSON. Check the API endpoint URL.');
+  }
+  return (await res.json()) as T;
+}
+
+/**
  * Remove undefined values recursively before JSON stringifying
  */
 export const sanitizeForDrive = (obj: any): any => {
@@ -62,7 +75,7 @@ export const getOrCreateAppFolder = async (accessToken: string): Promise<string>
       throw new Error(`Failed to search Google Drive folders: ${err}`);
     }
 
-    const searchData = await searchRes.json();
+    const searchData = await safeParseJson(searchRes);
     if (searchData.files && searchData.files.length > 0) {
       cachedFolderId = searchData.files[0].id;
       return cachedFolderId!;
@@ -87,7 +100,7 @@ export const getOrCreateAppFolder = async (accessToken: string): Promise<string>
       throw new Error(`Failed to create Google Drive folder: ${err}`);
     }
 
-    const createData = await createRes.json();
+    const createData = await safeParseJson(createRes);
     cachedFolderId = createData.id;
     return cachedFolderId!;
   } catch (error) {
@@ -125,7 +138,7 @@ export const saveProjectToDrive = async (
       }
     );
     if (searchRes.ok) {
-      const data = await searchRes.json();
+      const data = await safeParseJson(searchRes);
       if (data.files && data.files.length > 0) {
         fileId = data.files[0].id;
         cachedFileIds.set(project.id, fileId!);
@@ -152,7 +165,7 @@ export const saveProjectToDrive = async (
       throw new Error(`Failed to update project file on Drive: ${err}`);
     }
 
-    const updateData = await updateRes.json();
+    const updateData = await safeParseJson(updateRes);
     return { fileId: updateData.id, modifiedTime: updateData.modifiedTime };
   } else {
     // Create new file using multipart upload
@@ -193,7 +206,7 @@ export const saveProjectToDrive = async (
       throw new Error(`Failed to create project file on Drive: ${err}`);
     }
 
-    const createData = await createRes.json();
+    const createData = await safeParseJson(createRes);
     cachedFileIds.set(project.id, createData.id);
     return { fileId: createData.id };
   }
@@ -226,7 +239,7 @@ export const updateDriveManifest = async (
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await safeParseJson(res);
         if (data.files && data.files.length > 0) {
           manifestId = data.files[0].id;
           cachedManifestFileId = manifestId;
@@ -278,7 +291,7 @@ export const updateDriveManifest = async (
         }
       );
       if (res.ok) {
-        const d = await res.json();
+        const d = await safeParseJson(res);
         cachedManifestFileId = d.id;
       }
     }
@@ -309,7 +322,7 @@ export const fetchProjectsFromDrive = async (
     throw new Error(`Failed to list files from Drive: ${err}`);
   }
 
-  const listData = await listRes.json();
+  const listData = await safeParseJson(listRes);
   const files: Array<{ id: string; name: string }> = listData.files || [];
 
   let lastActiveProjectId: string | null = null;
@@ -323,7 +336,7 @@ export const fetchProjectsFromDrive = async (
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (manRes.ok) {
-          const manData = await manRes.json();
+          const manData = await safeParseJson(manRes);
           if (manData.lastActiveProjectId) {
             lastActiveProjectId = manData.lastActiveProjectId;
           }
@@ -348,7 +361,7 @@ export const fetchProjectsFromDrive = async (
           }
         );
         if (contentRes.ok) {
-          const proj: ProjectData = await contentRes.json();
+          const proj: ProjectData = await safeParseJson(contentRes);
           if (proj && proj.id) {
             cachedFileIds.set(proj.id, file.id);
             fetchedProjects.push(proj);
@@ -391,7 +404,7 @@ export const deleteProjectFromDrive = async (
       }
     );
     if (searchRes.ok) {
-      const data = await searchRes.json();
+      const data = await safeParseJson(searchRes);
       if (data.files && data.files.length > 0) {
         fileId = data.files[0].id;
       }

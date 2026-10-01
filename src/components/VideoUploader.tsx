@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { VideoInspection } from '../utils/videoProcessor';
 import { Language, translations } from '../utils/i18n';
+import { extractDirectMp4Url } from '../services/videoDownloader';
 
 interface VideoUploaderProps {
   selectedFile: File | null;
@@ -318,22 +319,23 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                     setIsImportingLink(true);
 
                     try {
+                      const extracted = await extractDirectMp4Url(url);
                       let file: File;
                       try {
-                        const res = await fetch(url);
+                        const res = await fetch(extracted.url);
                         const blob = await res.blob();
-                        file = new File([blob], `imported_video_${Date.now()}.mp4`, { type: blob.type || 'video/mp4' });
+                        file = new File([blob], extracted.filename || `imported_video_${Date.now()}.mp4`, { type: blob.type || 'video/mp4' });
                       } catch {
-                        file = new File(['synthetic-video-content'], `video_link_${Date.now()}.mp4`, { type: 'video/mp4' });
+                        file = new File(['synthetic-video-content'], extracted.filename || `video_link_${Date.now()}.mp4`, { type: 'video/mp4' });
                       }
 
                       setTimeout(() => {
                         setIsImportingLink(false);
                         onFileSelect(file);
-                      }, 600);
+                      }, 500);
                     } catch (err: any) {
                       setIsImportingLink(false);
-                      setErrorMessage(err?.message || 'Failed to import video from link.');
+                      setErrorMessage(err?.message || 'Failed to download video from link.');
                     }
                   }}
                   className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-lg shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
@@ -341,7 +343,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                   {isImportingLink ? (
                     <>
                       <Sparkles className="w-4 h-4 animate-spin text-white" />
-                      <span>Importing video...</span>
+                      <span>Downloading video...</span>
                     </>
                   ) : (
                     <>
