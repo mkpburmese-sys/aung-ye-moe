@@ -44,7 +44,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       icon: Film,
       badge: {
         text: 'HOT 🔥',
-        className: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+        className: 'bg-blue-500/15 text-sky-400 border-blue-500/30',
       },
     },
     {
@@ -56,7 +56,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       icon: Mic,
       badge: {
         text: 'MM VOICE',
-        className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+        className: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
       },
     },
     {
@@ -68,7 +68,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       icon: Video,
       badge: {
         text: 'SMART AI',
-        className: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+        className: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
       },
     },
     {
@@ -113,8 +113,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       
       {/* Dynamic Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-zinc-900 border border-orange-500/40 rounded-2xl p-4 shadow-2xl animate-slideUp flex items-start gap-3">
-          <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-zinc-900 border border-blue-500/40 rounded-2xl p-4 shadow-2xl animate-slideUp flex items-start gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-sky-400 shrink-0">
             <AlertCircle className="w-4.5 h-4.5" />
           </div>
           <div className="flex-1 space-y-1">
@@ -222,7 +222,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                     <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-zinc-950/90 border border-blue-500/40 text-[10px] font-bold text-blue-400 shadow-sm leading-none whitespace-nowrap">
                       <Lock className="w-2.5 h-2.5 text-blue-400 shrink-0" />
                       <span className="hidden min-[400px]:inline">
-                        {language === 'mm' ? 'သော့ခတ်ထားသည်' : 'Locked'}
+                        {language === 'mm' ? '' : ''}
                       </span>
                     </div>
                   ) : (
@@ -269,7 +269,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   1
                 </div>
                 <h3 className="text-sm font-bold text-white">
-                  {language === 'mm' ? '၁️⃣ အကောင့်ဖွင့်ပါ' : '1️⃣ Create Account'}
+                  {language === 'mm' ? 'အကောင့်ဖွင့်ပါ' : 'Create Account'}
                 </h3>
               </div>
               <p className="text-xs text-zinc-400 leading-relaxed">
@@ -286,7 +286,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   2
                 </div>
                 <h3 className="text-sm font-bold text-white">
-                  {language === 'mm' ? '၂️⃣ AI Tool ရွေးချယ်ပါ' : '2️⃣ Choose AI Tool'}
+                  {language === 'mm' ? 'AI Tool ရွေးချယ်ပါ' : 'Choose AI Tool'}
                 </h3>
               </div>
               <p className="text-xs text-zinc-400 leading-relaxed">
@@ -303,7 +303,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   3
                 </div>
                 <h3 className="text-sm font-bold text-white">
-                  {language === 'mm' ? '၃️⃣ Video အမြန်ဖန်တီးပါ' : '3️⃣ Generate Fast Content'}
+                  {language === 'mm' ? 'Video အမြန်ဖန်တီးပါ' : 'Generate Fast Content'}
                 </h3>
               </div>
               <p className="text-xs text-zinc-400 leading-relaxed">

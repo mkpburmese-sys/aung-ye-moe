@@ -45,7 +45,12 @@ export const AboutModal: React.FC<AboutModalProps> = ({ language }) => {
     <div className="max-w-3xl mx-auto px-4 py-8 animate-fadeIn text-left">
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
         <div className="flex items-center gap-3">
-          <img src="/favicon.png" alt="MKP VidPrompts Logo" className="w-12 h-12 rounded-2xl object-contain shadow-lg shrink-0" />
+          <img 
+            src="/favicon.png" 
+            alt="MKP VidPrompts Master" 
+            className="w-12 h-12 rounded-2xl object-contain bg-transparent shadow-xl shrink-0" 
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">
               {language === 'mm' ? 'MKP VidPrompts အကြောင်း' : 'About MKP VidPrompts'}
@@ -104,7 +109,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ language }) => {
         <div className="py-4 px-6 rounded-xl bg-zinc-950 border border-zinc-850 text-center text-xs sm:text-sm text-zinc-500">
           <p className="font-semibold text-zinc-400">v1.2.0 (Premium Release)</p>
           <p className="mt-1.5 flex items-center justify-center gap-1.5">
-            <img src="/favicon.png" alt="Logo" className="w-4 h-4 rounded object-contain inline-block" />
+            <img src="/favicon.png" alt="Logo" className="w-4 h-4 rounded object-contain bg-transparent inline-block" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             <span>© 2026 MKP VidPrompts. All rights reserved.</span>
           </p>
         </div>

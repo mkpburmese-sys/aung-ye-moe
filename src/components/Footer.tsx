@@ -15,7 +15,12 @@ export const Footer: React.FC<FooterProps> = ({ language = 'mm' }) => {
         
         {/* Left: Brand info with unified logo */}
         <div className="flex items-center gap-3">
-          <img src="/favicon.png" alt="MKP VidPrompts Logo" className="w-9 h-9 rounded-xl object-contain shadow-md shrink-0" />
+          <img 
+            src="/favicon.png" 
+            alt="MKP VidPrompts Master" 
+            className="w-9 h-9 rounded-xl object-contain bg-transparent shadow-md shrink-0" 
+            onError={(e) => { e.currentTarget.style.display = 'none'; }} 
+          />
           <div>
             <span className="font-bold text-sm tracking-tight text-white">
               MKP VidPrompts <span className="text-sky-400 font-medium text-xs">Master</span>
@@ -72,7 +77,12 @@ export const Footer: React.FC<FooterProps> = ({ language = 'mm' }) => {
 
         {/* Right: Copyright with compact logo */}
         <div className="flex items-center gap-2 text-center md:text-right">
-          <img src="/favicon.png" alt="Logo" className="w-5 h-5 rounded-md object-contain shrink-0 inline-block" />
+          <img 
+            src="/favicon.png" 
+            alt="Logo" 
+            className="w-6 h-6 rounded-md object-contain bg-transparent shrink-0 inline-block" 
+            onError={(e) => { e.currentTarget.style.display = 'none'; }} 
+          />
           <p className="text-xs text-zinc-500 font-medium">
             © 2026 MKP VidPrompts. All rights reserved.
           </p>

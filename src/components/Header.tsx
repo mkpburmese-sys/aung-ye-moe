@@ -95,8 +95,9 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <img 
             src="/favicon.png" 
-            alt="MKP VidPrompts Master Logo" 
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-contain shadow-md shrink-0 group-hover:scale-105 transition-transform duration-200" 
+            alt="MKP VidPrompts Master" 
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-contain bg-transparent shadow-md shrink-0 group-hover:scale-105 transition-transform duration-200"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
           />
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">

@@ -94,8 +94,9 @@ export const LoginView: React.FC<LoginViewProps> = ({
         <div className="text-center space-y-3">
           <img 
             src="/favicon.png" 
-            alt="MKP VidPrompts Master Logo" 
-            className="w-14 h-14 rounded-2xl object-contain shadow-2xl shadow-blue-500/20 mx-auto" 
+            alt="MKP VidPrompts Master" 
+            className="w-12 h-12 rounded-2xl object-contain bg-transparent shadow-xl mx-auto" 
+            onError={(e) => { e.currentTarget.style.display = 'none'; }} 
           />
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             MKP VidPrompts Master

@@ -48,7 +48,12 @@ export const ContactModal: React.FC<ContactModalProps> = ({ language }) => {
     <div className="max-w-3xl mx-auto px-4 py-8 text-left animate-fadeIn">
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
         <div className="flex items-center gap-3">
-          <img src="/favicon.png" alt="MKP VidPrompts Logo" className="w-12 h-12 rounded-2xl object-contain shadow-lg shrink-0" />
+          <img 
+            src="/favicon.png" 
+            alt="MKP VidPrompts Master" 
+            className="w-12 h-12 rounded-2xl object-contain bg-transparent shadow-xl shrink-0" 
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">
               {t.contactUs || 'Contact Us'}
