@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Video, Mail, Send, ArrowLeft, Globe, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Mail, Send, ArrowLeft, Globe, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { auth, sendPasswordResetEmail } from '../firebase/config';
 import { Language, translations } from '../utils/i18n';
 
@@ -74,9 +74,7 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
       <div className="max-w-md w-full mx-auto space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 flex items-center justify-center shadow-xl shadow-orange-500/20 mx-auto">
-            <Video className="w-7 h-7 text-white" />
-          </div>
+          <img src="/favicon.png" alt="MKP VidPrompts" className="w-8 h-8 sm:w-9 sm:h-9 object-contain bg-transparent drop-shadow-sm mx-auto" />
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             {t.forgotPassword}
           </h1>

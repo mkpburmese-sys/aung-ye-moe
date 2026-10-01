@@ -15,12 +15,7 @@ export const Footer: React.FC<FooterProps> = ({ language = 'mm' }) => {
         
         {/* Left: Brand info with unified logo */}
         <div className="flex items-center gap-3">
-          <img 
-            src="/favicon.png" 
-            alt="MKP VidPrompts Master" 
-            className="w-9 h-9 rounded-xl object-contain bg-transparent shadow-md shrink-0" 
-            onError={(e) => { e.currentTarget.style.display = 'none'; }} 
-          />
+          <img src="/favicon.png" alt="MKP VidPrompts" className="w-8 h-8 sm:w-9 sm:h-9 object-contain bg-transparent drop-shadow-sm" />
           <div>
             <span className="font-bold text-sm tracking-tight text-white">
               MKP VidPrompts <span className="text-sky-400 font-medium text-xs">Master</span>

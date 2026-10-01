@@ -42,9 +42,10 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         ? 'ဗီဒီယိုတင်ပြီး AI အသံထွက်ဖြင့် ဇာတ်လမ်းပြန်လည်သုံးသပ်ချက် (Movie Recap) အပြည့်အစုံ ဖန်တီးရန်။'
         : 'Upload a video and generate a fully narrated movie recap with AI voiceover.',
       icon: Film,
+      iconColor: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
       badge: {
         text: 'HOT 🔥',
-        className: 'bg-blue-500/15 text-sky-400 border-blue-500/30',
+        className: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
       },
     },
     {
@@ -54,9 +55,10 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         ? 'စာသားများကို သဘာဝကျသော AI အသံများအဖြစ် ပြောင်းလဲရန်။'
         : 'Convert text into natural AI voice.',
       icon: Mic,
+      iconColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
       badge: {
         text: 'MM VOICE',
-        className: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+        className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
       },
     },
     {
@@ -66,6 +68,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         ? 'Video ကို အလိုအလျောက် Analyze လုပ်ပြီး AI Video Prompts များထုတ်ယူရန်။'
         : 'Analyze videos and generate detailed AI prompts.',
       icon: Video,
+      iconColor: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
       badge: {
         text: 'SMART AI',
         className: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
@@ -78,6 +81,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         ? 'စာသားဖော်ပြချက်မှ AI ပုံများနှင့် အလှအပဒီဇိုင်းများကို ဖန်တီးရန်။'
         : 'Generate custom AI images and visual concepts directly from text descriptions.',
       icon: Sparkles,
+      iconColor: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
     },
     {
       id: 'thumbnail' as const,
@@ -86,6 +90,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         ? 'ဆွဲဆောင်မှုရှိသော သီချင်း/ဗီဒီယို ပုံငယ်များ အလွယ်တကူ ဖန်တီးရန်။'
         : 'Create eye-catching AI thumbnails.',
       icon: ImageIcon,
+      iconColor: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
     },
     {
       id: 'story-prompts' as const,
@@ -94,6 +99,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         ? 'ဇာတ်လမ်းများကို အခန်းလိုက်ခွဲ၍ structured ဗီဒီယို prompts များပြောင်းရန်။'
         : 'Turn stories into detailed AI video prompts.',
       icon: BookOpen,
+      iconColor: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     },
   ];
 
@@ -157,9 +163,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
       {/* 2. Conditionally Rendered "API Key is Required" Alert Card - STRICTLY rendered ONLY for logged-in users without API key */}
       {user && !hasApiKey && (
-        <div className="bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-zinc-900 border border-blue-500/30 rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fadeIn">
+        <div className="bg-zinc-900/95 backdrop-blur-md border border-zinc-800/80 rounded-2xl p-4 sm:p-5 shadow-md shadow-black/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fadeIn">
           <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-sky-400 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
               <Key className="w-5 h-5" />
             </div>
             <div className="space-y-1">
@@ -174,7 +180,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           <button
             type="button"
             onClick={onNavigateToApi}
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0 w-full sm:w-auto text-center"
+            className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-orange-950/25 transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0 w-full sm:w-auto text-center"
           >
             {t.connectApiKeyBtn}
           </button>
@@ -201,29 +207,21 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               <div
                 key={tool.id}
                 onClick={() => handleCardClick(tool.id)}
-                className={`group relative overflow-hidden rounded-2xl p-3.5 sm:p-4 flex flex-col items-start gap-2.5 sm:gap-3 bg-zinc-900/90 hover:bg-zinc-800/80 border transition-all duration-300 cursor-pointer shadow-sm active:scale-[0.98] select-none text-left ${
-                  isLocked 
-                    ? 'border-zinc-800 hover:border-blue-500/40 opacity-90' 
-                    : 'border-zinc-800 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-900/20'
+                className={`group relative rounded-2xl p-4 flex flex-col items-start gap-3 bg-zinc-900/95 backdrop-blur-md border border-zinc-800/80 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-950/20 transition-all duration-200 cursor-pointer shadow-md shadow-black/30 active:scale-[0.98] select-none text-left ${
+                  isLocked ? 'opacity-85' : ''
                 }`}
               >
-                {/* Subtle Ambient Background Glow on Hover */}
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/[0.02] rounded-full blur-2xl pointer-events-none group-hover:bg-blue-500/[0.05] transition-all" />
-
                 {/* Top Row: Left Tool Icon + Right Badge */}
                 <div className="flex items-center justify-between w-full gap-2">
-                  {/* Icon Container */}
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-sky-400 shadow-sm transition-all duration-300 group-hover:bg-gradient-to-br group-hover:from-blue-600 group-hover:to-indigo-600 group-hover:text-white group-hover:scale-105 shrink-0">
+                  {/* Colorful Tool Icon */}
+                  <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shadow-sm shrink-0 transition-transform duration-200 group-hover:scale-105 ${tool.iconColor}`}>
                     <Icon className="w-5 h-5" />
                   </div>
 
                   {/* Right Badge: Lock Badge if locked, else feature badge if present and user is NOT logged in */}
                   {isLocked ? (
-                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-zinc-950/90 border border-blue-500/40 text-[10px] font-bold text-blue-400 shadow-sm leading-none whitespace-nowrap">
-                      <Lock className="w-2.5 h-2.5 text-blue-400 shrink-0" />
-                      <span className="hidden min-[400px]:inline">
-                        {language === 'mm' ? '' : ''}
-                      </span>
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-zinc-950/90 border border-zinc-800 text-[10px] font-bold text-zinc-400 shadow-sm leading-none whitespace-nowrap">
+                      <Lock className="w-2.5 h-2.5 text-zinc-400 shrink-0" />
                     </div>
                   ) : (
                     !user && tool.badge && (
@@ -234,9 +232,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                   )}
                 </div>
 
-                {/* Information Info Block (Title only, no truncation) */}
+                {/* Information Info Block (Title only, high readability, subtle orange accent on hover) */}
                 <div className="w-full">
-                  <h3 className="text-xs sm:text-sm font-bold text-white tracking-wide transition-colors group-hover:text-sky-400 leading-snug">
+                  <h3 className="text-xs sm:text-sm font-semibold text-zinc-100 tracking-wide transition-colors group-hover:text-orange-400 leading-snug">
                     {tool.title}
                   </h3>
                 </div>
@@ -263,16 +261,16 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
             {/* Step 1 */}
-            <div className="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-2.5 hover:border-blue-500/40 transition-colors">
+            <div className="bg-zinc-900/95 backdrop-blur-md border border-zinc-800/80 hover:border-zinc-700/80 rounded-2xl p-4 sm:p-5 space-y-2.5 shadow-md shadow-black/30 transition-all">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-sky-400 font-bold text-xs shrink-0">
+                <div className="w-7 h-7 rounded-xl bg-orange-500/10 border border-orange-500/25 flex items-center justify-center text-orange-400 font-bold text-xs shrink-0">
                   1
                 </div>
-                <h3 className="text-sm font-bold text-white">
+                <h3 className="text-sm font-semibold text-white">
                   {language === 'mm' ? 'အကောင့်ဖွင့်ပါ' : 'Create Account'}
                 </h3>
               </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <p className="text-xs text-zinc-400 leading-relaxed font-normal">
                 {language === 'mm' 
                   ? 'တစ်မိနစ်အတွင်း အခမဲ့ အကောင့်ဖွင့်၍ စတင်နိုင်ပါသည်။' 
                   : 'Get started and create your free account in less than a minute.'}
@@ -280,16 +278,16 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </div>
 
             {/* Step 2 */}
-            <div className="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-2.5 hover:border-blue-500/40 transition-colors">
+            <div className="bg-zinc-900/95 backdrop-blur-md border border-zinc-800/80 hover:border-zinc-700/80 rounded-2xl p-4 sm:p-5 space-y-2.5 shadow-md shadow-black/30 transition-all">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-xs shrink-0">
+                <div className="w-7 h-7 rounded-xl bg-orange-500/10 border border-orange-500/25 flex items-center justify-center text-orange-400 font-bold text-xs shrink-0">
                   2
                 </div>
-                <h3 className="text-sm font-bold text-white">
+                <h3 className="text-sm font-semibold text-white">
                   {language === 'mm' ? 'AI Tool ရွေးချယ်ပါ' : 'Choose AI Tool'}
                 </h3>
               </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <p className="text-xs text-zinc-400 leading-relaxed font-normal">
                 {language === 'mm' 
                   ? 'Recap, Prompt Maker, Voice Generator စသည်တို့ကို အသုံးပြုပါ။' 
                   : 'Use Recap, Prompt Maker, Voice Generator & more.'}
@@ -297,16 +295,16 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </div>
 
             {/* Step 3 */}
-            <div className="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-2.5 hover:border-blue-500/40 transition-colors">
+            <div className="bg-zinc-900/95 backdrop-blur-md border border-zinc-800/80 hover:border-zinc-700/80 rounded-2xl p-4 sm:p-5 space-y-2.5 shadow-md shadow-black/30 transition-all">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 font-bold text-xs shrink-0">
+                <div className="w-7 h-7 rounded-xl bg-orange-500/10 border border-orange-500/25 flex items-center justify-center text-orange-400 font-bold text-xs shrink-0">
                   3
                 </div>
-                <h3 className="text-sm font-bold text-white">
+                <h3 className="text-sm font-semibold text-white">
                   {language === 'mm' ? 'Video အမြန်ဖန်တီးပါ' : 'Generate Fast Content'}
                 </h3>
               </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+              <p className="text-xs text-zinc-400 leading-relaxed font-normal">
                 {language === 'mm' 
                   ? 'အချိန်ကုန်သက်သာစွာဖြင့် အရည်အသွေးမြင့် Content များ ထုတ်ယူပါ။' 
                   : 'Create high-impact video concepts and save creative time.'}

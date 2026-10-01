@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Video,
   RefreshCw,
   Menu,
   X,
@@ -93,12 +92,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => handleNavClick('home')}
           className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none shrink-0"
         >
-          <img 
-            src="/favicon.png" 
-            alt="MKP VidPrompts Master" 
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-contain bg-transparent shadow-md shrink-0 group-hover:scale-105 transition-transform duration-200"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-          />
+          <img src="/favicon.png" alt="MKP VidPrompts" className="w-8 h-8 sm:w-9 sm:h-9 object-contain bg-transparent drop-shadow-sm" />
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-sm sm:text-base tracking-tight text-white group-hover:text-sky-400 transition-colors whitespace-nowrap">

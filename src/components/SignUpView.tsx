@@ -87,12 +87,7 @@ export const SignUpView: React.FC<SignUpViewProps> = ({
       <div className="max-w-md w-full mx-auto space-y-6">
         {/* Brand Header with Unified Logo */}
         <div className="text-center space-y-3">
-          <img 
-            src="/favicon.png" 
-            alt="MKP VidPrompts Master" 
-            className="w-12 h-12 rounded-2xl object-contain bg-transparent shadow-xl mx-auto" 
-            onError={(e) => { e.currentTarget.style.display = 'none'; }} 
-          />
+          <img src="/favicon.png" alt="MKP VidPrompts" className="w-8 h-8 sm:w-9 sm:h-9 object-contain bg-transparent drop-shadow-sm mx-auto" />
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             {t.createAccountBtn}
           </h1>
