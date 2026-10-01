@@ -2293,6 +2293,12 @@ app.post('/api/generate-image', async (req, res) => {
 
     const ai = getGenAIClient(clientApiKey as string);
 
+    let targetRatio = '9:16';
+    if (aspectRatio === '1:1') targetRatio = '1:1';
+    else if (aspectRatio === '16:9') targetRatio = '16:9';
+    else if (aspectRatio === '4:5' || aspectRatio === '3:4') targetRatio = '3:4';
+    else if (aspectRatio === '9:16') targetRatio = '9:16';
+
     const response = await ai.models.generateContent({
       model: 'gemini-3.1-flash-lite-image',
       contents: {
@@ -2304,7 +2310,7 @@ app.post('/api/generate-image', async (req, res) => {
       },
       config: {
         imageConfig: {
-          aspectRatio: aspectRatio === '16:9' ? '16:9' : '9:16',
+          aspectRatio: targetRatio,
         },
       },
     });

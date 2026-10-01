@@ -5,6 +5,7 @@ import { Language, translations } from '../utils/i18n';
 import { generateTextToVoice } from '../services/api';
 import { CreationCard } from './CreationCard';
 import { PageHeader } from './PageHeader';
+import { SHARED_VOICES, VoiceOption as SharedVoiceOption } from '../constants/voices';
 
 interface TextVoiceLauncherProps {
   projects: ProjectData[];
@@ -23,18 +24,12 @@ interface VoiceOption {
   lang: 'mm' | 'en';
 }
 
-const VOICES: VoiceOption[] = [
-  { id: 'mm_male_thiha', name: 'Thiha (Male)', style: 'Deep · Professional', lang: 'mm' },
-  { id: 'mm_female_nilar', name: 'Nilar (Female)', style: 'Clear · Warm', lang: 'mm' },
-  { id: 'mm_male_zaw', name: 'Zaw (Male)', style: 'Energetic · Active', lang: 'mm' },
-  { id: 'mm_female_su', name: 'Su (Female)', style: 'Soft · Calm', lang: 'mm' },
-  { id: 'mm_female_thida', name: 'Thida (Female)', style: 'Warm · Natural', lang: 'mm' },
-  { id: 'mm_male_aung', name: 'Aung (Male)', style: 'Deep · Authoritative', lang: 'mm' },
-  { id: 'en_female_emma', name: 'Emma (Female)', style: 'Clear · Professional', lang: 'en' },
-  { id: 'en_male_james', name: 'James (Male)', style: 'Cinematic · Deep', lang: 'en' },
-  { id: 'en_female_lily', name: 'Lily (Female)', style: 'Soft · Friendly', lang: 'en' },
-  { id: 'en_male_david', name: 'David (Male)', style: 'Energetic · Modern', lang: 'en' },
-];
+const VOICES: VoiceOption[] = SHARED_VOICES.map((v) => ({
+  id: v.id,
+  name: v.language === 'mm' ? `${v.burmeseName} (${v.name}) · ${v.style}` : `${v.name} · ${v.style}`,
+  style: v.style,
+  lang: v.language,
+}));
 
 export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
   projects,
@@ -61,13 +56,15 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Active Generation result (shown right after successful generation)
+  // Active Generation result
   const [generatedAudio, setGeneratedAudio] = useState<{
     audioUrl: string;
     duration: string;
     text: string;
     voiceName: string;
   } | null>(null);
+
+  const generatedPlayerRef = useRef<HTMLDivElement | null>(null);
 
   // List play tracking states
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -76,12 +73,11 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
 
   // Refs for speech and preview audios
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const [isPreviewingVoiceId, setIsPreviewingVoiceId] = useState<string | null>(null);
   const [isFetchingPreviewId, setIsFetchingPreviewId] = useState<string | null>(null);
   const fetchTimeoutRef = useRef<any>(null);
   
-  // Custom Toast Notification States for simulated previews
+  // Custom Toast Notification States
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimeoutRef = useRef<any>(null);
 
@@ -100,9 +96,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
-      }
-      if (previewAudioRef.current) {
-        previewAudioRef.current.pause();
       }
       if (fetchTimeoutRef.current) {
         clearTimeout(fetchTimeoutRef.current);
@@ -125,7 +118,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
   const handlePreviewVoice = (voiceId: string, voiceLang: 'mm' | 'en', e: React.MouseEvent) => {
     e.stopPropagation();
 
-    // If currently fetching or playing this exact voice, stop it
     if (isFetchingPreviewId === voiceId || isPreviewingVoiceId === voiceId) {
       if (fetchTimeoutRef.current) {
         clearTimeout(fetchTimeoutRef.current);
@@ -139,7 +131,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
       return;
     }
 
-    // Cancel any other active previews or fetch
     if (fetchTimeoutRef.current) {
       clearTimeout(fetchTimeoutRef.current);
     }
@@ -149,7 +140,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
     setIsFetchingPreviewId(null);
     setIsPreviewingVoiceId(null);
 
-    // Start simulated audio fetch
     setIsFetchingPreviewId(voiceId);
 
     fetchTimeoutRef.current = setTimeout(() => {
@@ -159,20 +149,12 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
       const voiceObj = VOICES.find((v) => v.id === voiceId);
       const voiceNameRaw = voiceObj ? voiceObj.name : 'Unknown Speaker';
 
-      // ====================================================================
-      // DEVELOPMENT SWAP POINTER:
-      // To connect a real backend audio file preview, swap out this block:
-      // const player = new Audio(voiceObj.previewUrl);
-      // player.play();
-      // ====================================================================
-
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-      setToastMsg(`🔊 Playing ${voiceNameRaw} preview in ${voiceLang === 'mm' ? 'Myanmar' : 'English'}...`);
+      setToastMsg(`🔊 Playing ${voiceNameRaw} preview...`);
       toastTimeoutRef.current = setTimeout(() => {
         setToastMsg(null);
       }, 3000);
 
-      // Audition sound logic (Myanmar uses Web Audio synthetic tone; English uses speechSynthesis)
       if (voiceLang === 'mm') {
         try {
           const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -181,10 +163,9 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             
-            // Generate a premium double-toned electronic synth chime
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5 note
-            osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.15); // G5 note
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.15);
             
             gain.gain.setValueAtTime(0.12, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
@@ -198,7 +179,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
           console.warn('Web Audio synthesis failed:', err);
         }
 
-        // Simulates audio finish in 3 seconds to clear button state
         fetchTimeoutRef.current = setTimeout(() => {
           setIsPreviewingVoiceId(null);
         }, 3000);
@@ -210,7 +190,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
           utterance.lang = 'en-US';
           utterance.rate = selectedSpeed;
           
-          // Guard timer to reset states in case synthesis events don't fire
           const fallbackEndTimer = setTimeout(() => {
             setIsPreviewingVoiceId(null);
           }, 3000);
@@ -230,7 +209,7 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
           }, 3000);
         }
       }
-    }, 800); // Super fast, responsive backend simulated fetch
+    }, 600);
   };
 
   // Recent audio playback controller
@@ -274,7 +253,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
     }
   };
 
-  // Handle seeking inside Recent Audio card
   const handleSeekRecent = (projId: string, pct: number) => {
     if (playingId === projId && audioRef.current) {
       const targetTime = (pct / 100) * audioRef.current.duration;
@@ -356,8 +334,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
 
       setGeneratedAudio(generatedObj);
 
-      // Create new text-to-voice project and save
-      const wordCountNum = text.trim().split(/\s+/).length;
       const title = text.slice(0, 30).trim() + (text.length > 30 ? '...' : '') || 'Speech Audio';
       const newProj: ProjectData = {
         id: `t2v_${Date.now()}`,
@@ -385,6 +361,11 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
       };
 
       onSaveProject(newProj);
+
+      // Smooth scroll to generated player below generate button
+      setTimeout(() => {
+        generatedPlayerRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
     } catch (err: any) {
       setErrorMessage(err?.message || 'Speech generation failed. Please try again.');
     } finally {
@@ -457,7 +438,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
       {/* VIEW A: LANDING PAGE (launcher state) */}
       {view === 'launcher' && (
         <div className="space-y-6">
-          {/* Action buttons */}
           <CreationCard
             title="New Audio"
             subtitle="Generate speech from text"
@@ -469,7 +449,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
             }}
           />
 
-          {/* Recent Audio Area */}
           <div className="space-y-3 pt-2">
             <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
               Recent Audio
@@ -500,7 +479,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
                           </p>
                         </div>
 
-                        {/* Delete button */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -514,7 +492,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
                         </button>
                       </div>
 
-                      {/* Interactive Audio Progress Slider & Controllers */}
                       <div className="flex items-center gap-3">
                         <button
                           onClick={(e) => togglePlayProjectAudio(proj, e)}
@@ -543,7 +520,6 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
                         </div>
                       </div>
 
-                      {/* Download Section */}
                       <div className="flex items-center justify-end pt-1">
                         <button
                           onClick={() => {
@@ -566,7 +542,7 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
         </div>
       )}
 
-      {/* VIEW B: CREATION INTERFACE (createView state) */}
+      {/* VIEW B: CREATION INTERFACE */}
       {view === 'create' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -609,164 +585,84 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
                   </div>
                 )}
               </div>
-
-              {/* POST-GENERATION PLAYER */}
-              {generatedAudio && (
-                <div className="bg-[#131313] border border-emerald-500/20 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl animate-fadeIn text-left">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-bold text-white text-sm">Voice Generated Successfully</h4>
-                      <p className="text-[11px] text-zinc-400 font-medium truncate max-w-xs sm:max-w-md">
-                        {generatedAudio.text}
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={togglePlayGenerated}
-                      className="w-10 h-10 rounded-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 flex items-center justify-center shadow-md transition-transform active:scale-95 cursor-pointer"
-                    >
-                      {isGeneratedPlaying ? (
-                        <Pause className="w-4 h-4 fill-current" />
-                      ) : (
-                        <Play className="w-4 h-4 fill-current ml-0.5" />
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Progress timeline */}
-                  <div className="space-y-1">
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={generatedProgress}
-                      onChange={(e) => {
-                        const pct = parseFloat(e.target.value);
-                        if (audioRef.current) {
-                          const targetTime = (pct / 100) * (audioRef.current.duration || 100);
-                          audioRef.current.currentTime = targetTime;
-                          setGeneratedProgress(pct);
-                          setGeneratedPlayTime(targetTime);
-                        }
-                      }}
-                      className="w-full accent-emerald-500 bg-zinc-950 rounded-lg h-1.5 cursor-pointer"
-                    />
-                    <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
-                      <span>{formatSeconds(generatedPlayTime)}</span>
-                      <span>{generatedDuration > 0 ? formatSeconds(generatedDuration) : generatedAudio.duration}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-end">
-                    <button
-                      onClick={() => handleDownloadFile(generatedAudio.audioUrl, 'AI_Voice_Output')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-850 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl border border-zinc-700 hover:border-zinc-600 transition-all shadow"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Download</span>
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Right Column: Settings (col-span-5) */}
             <div className="lg:col-span-5 space-y-5 text-left">
               <div className="bg-[#131313] border border-white/10 rounded-2xl p-4 sm:p-5 space-y-5 shadow-md">
                 
-                {/* 1. LANGUAGE (Segmented Pill Controls) */}
-                <div className="space-y-2">
+                {/* 1. LANGUAGE (Dropdown) */}
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 block">
                     Language
                   </label>
-                  <div className="bg-zinc-950 p-1 rounded-xl border border-white/5 flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedLang('mm')}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                        selectedLang === 'mm'
-                          ? 'bg-orange-500 text-white shadow'
-                          : 'text-zinc-400 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      Myanmar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedLang('en')}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                        selectedLang === 'en'
-                          ? 'bg-orange-500 text-white shadow'
-                          : 'text-zinc-400 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      English
-                    </button>
-                  </div>
+                  <select
+                    value={selectedLang}
+                    onChange={(e) => setSelectedLang(e.target.value as 'mm' | 'en')}
+                    className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-zinc-100 outline-none focus:border-orange-500 cursor-pointer"
+                  >
+                    <option value="mm">Myanmar (မြန်မာ)</option>
+                    <option value="en">English</option>
+                  </select>
                 </div>
 
-                {/* 2. SLEEK VERTICAL VOICE LIST */}
-                <div className="space-y-2">
+                {/* 2. AI VOICE SELECTION (Dropdown + Preview Button) */}
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 block">
                     AI Voice Selection
                   </label>
-                  <div className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
-                    {availableVoices.map((voice) => {
-                      const isSelected = selectedVoice === voice.id;
-                      const isFetching = isFetchingPreviewId === voice.id;
-                      const isPreving = isPreviewingVoiceId === voice.id;
+                  <div className="flex items-center gap-2 max-w-full overflow-hidden">
+                    <select
+                      value={selectedVoice}
+                      onChange={(e) => setSelectedVoice(e.target.value)}
+                      className="flex-1 bg-zinc-950 border border-white/10 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-zinc-100 outline-none focus:border-orange-500 cursor-pointer truncate max-w-full"
+                    >
+                      {availableVoices.map((voice) => (
+                        <option key={voice.id} value={voice.id}>
+                          {voice.name}
+                        </option>
+                      ))}
+                    </select>
 
+                    {/* Preview Button */}
+                    {(() => {
+                      const isFetching = isFetchingPreviewId === selectedVoice;
+                      const isPreving = isPreviewingVoiceId === selectedVoice;
                       const isAnyActive = isFetchingPreviewId !== null || isPreviewingVoiceId !== null;
                       const isThisActive = isFetching || isPreving;
                       const isButtonDisabled = isAnyActive && !isThisActive;
 
                       return (
-                        <div
-                          key={voice.id}
-                          onClick={() => !isButtonDisabled && setSelectedVoice(voice.id)}
-                          className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-3 ${
-                            isButtonDisabled
-                              ? 'bg-zinc-950/40 border-zinc-900 text-zinc-500 cursor-not-allowed opacity-60'
-                              : isSelected
-                              ? 'bg-orange-500/10 border-orange-500 text-white cursor-pointer'
-                              : 'bg-zinc-950 border-zinc-800 hover:border-zinc-750 text-zinc-300 cursor-pointer'
+                        <button
+                          type="button"
+                          disabled={isButtonDisabled}
+                          onClick={(e) => handlePreviewVoice(selectedVoice, selectedLang, e)}
+                          className={`px-3 py-2.5 rounded-xl border text-xs font-extrabold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                            isFetching
+                              ? 'text-orange-400 border-orange-500/30 bg-orange-500/5 animate-pulse'
+                              : isPreving
+                              ? 'text-rose-400 border-rose-500/30 bg-rose-500/5'
+                              : isButtonDisabled
+                              ? 'opacity-30 border-zinc-900 bg-zinc-950 text-zinc-600 cursor-not-allowed'
+                              : 'text-zinc-300 hover:text-white border-white/10 bg-zinc-900 hover:bg-zinc-850'
                           }`}
+                          title="Preview voice"
                         >
-                          <div className="min-w-0">
-                            <p className="font-extrabold text-zinc-100 text-xs truncate">{voice.name}</p>
-                            <p className="text-[10px] text-zinc-500 font-medium tracking-wide mt-0.5">{voice.style}</p>
-                          </div>
-
-                          <button
-                            type="button"
-                            disabled={isButtonDisabled}
-                            onClick={(e) => handlePreviewVoice(voice.id, voice.lang, e)}
-                            className={`px-2 py-1 rounded-lg border text-[10px] font-extrabold transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
-                              isFetching
-                                ? 'text-orange-400 border-orange-500/30 bg-orange-500/5 animate-pulse'
-                                : isPreving
-                                ? 'text-rose-400 border-rose-500/30 bg-rose-500/5'
-                                : isButtonDisabled
-                                ? 'opacity-30 border-zinc-900 bg-zinc-950 text-zinc-600 cursor-not-allowed'
-                                : 'text-zinc-400 hover:text-white border-zinc-800 bg-zinc-900 hover:bg-zinc-850'
-                            }`}
-                          >
-                            {isFetching ? (
-                              <div className="w-2.5 h-2.5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin shrink-0" />
-                            ) : isPreving ? (
-                              <Square className="w-2 h-2 fill-current shrink-0" />
-                            ) : (
-                              <Play className="w-2 h-2 fill-current shrink-0" />
-                            )}
-                            <span>{isFetching ? '...' : isPreving ? 'Playing...' : 'Preview'}</span>
-                          </button>
-                        </div>
+                          {isFetching ? (
+                            <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                          ) : isPreving ? (
+                            <Square className="w-3 h-3 fill-current shrink-0" />
+                          ) : (
+                            <Play className="w-3 h-3 fill-current shrink-0" />
+                          )}
+                          <span className="hidden sm:inline">{isFetching ? '...' : isPreving ? 'Playing' : 'Preview'}</span>
+                        </button>
                       );
-                    })}
+                    })()}
                   </div>
                 </div>
 
-                {/* AUDIO CONTROLS (3 distinct Range Sliders) */}
+                {/* AUDIO CONTROLS (3 Range Sliders) */}
                 <div className="space-y-4 pt-1">
                   <div className="border-t border-white/5 pt-3">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">
@@ -836,7 +732,7 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
                   </div>
                 </div>
 
-                {/* 5. GENERATE BUTTON (Consistent Solid Orange Theme) */}
+                {/* GENERATE BUTTON */}
                 <button
                   type="button"
                   disabled={!text.trim() || isGenerating || isOverLimit || !apiKey.trim()}
@@ -857,6 +753,71 @@ export const TextVoiceLauncher: React.FC<TextVoiceLauncherProps> = ({
                     </>
                   )}
                 </button>
+
+                {/* POST-GENERATION PLAYER (Rendered DIRECTLY BELOW Generate Voice button) */}
+                <div ref={generatedPlayerRef}>
+                  {generatedAudio && (
+                    <div className="mt-4 bg-zinc-950 border border-emerald-500/30 rounded-2xl p-4 space-y-3 shadow-xl animate-fadeIn text-left">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-white text-xs sm:text-sm flex items-center gap-1.5">
+                            <span>✨</span>
+                            <span>Voice Generated Successfully</span>
+                          </h4>
+                          <p className="text-[10px] text-zinc-400 font-medium truncate mt-0.5">
+                            {generatedAudio.text}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={togglePlayGenerated}
+                          className="w-9 h-9 rounded-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 flex items-center justify-center shadow-md transition-transform active:scale-95 cursor-pointer shrink-0"
+                        >
+                          {isGeneratedPlaying ? (
+                            <Pause className="w-4 h-4 fill-current" />
+                          ) : (
+                            <Play className="w-4 h-4 fill-current ml-0.5" />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Progress timeline */}
+                      <div className="space-y-1">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={generatedProgress}
+                          onChange={(e) => {
+                            const pct = parseFloat(e.target.value);
+                            if (audioRef.current) {
+                              const targetTime = (pct / 100) * (audioRef.current.duration || 100);
+                              audioRef.current.currentTime = targetTime;
+                              setGeneratedProgress(pct);
+                              setGeneratedPlayTime(targetTime);
+                            }
+                          }}
+                          className="w-full accent-emerald-500 bg-zinc-900 rounded-lg h-1.5 cursor-pointer"
+                        />
+                        <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
+                          <span>{formatSeconds(generatedPlayTime)}</span>
+                          <span>{generatedDuration > 0 ? formatSeconds(generatedDuration) : generatedAudio.duration}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end">
+                        <button
+                          onClick={() => handleDownloadFile(generatedAudio.audioUrl, 'AI_Voice_Output')}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl border border-zinc-800 hover:border-zinc-700 transition-all shadow"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Download</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
               </div>
             </div>
 

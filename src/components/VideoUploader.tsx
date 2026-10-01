@@ -52,6 +52,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   onFileSelect,
   onAnalyzeClick,
   isAnalyzing,
+  onLoadSampleDemo,
   hasApiKey,
   onOpenApiKeySettings,
   language,
@@ -60,46 +61,46 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const handleDropzoneClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
   const [isDragOver, setIsDragOver] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [videoError, setVideoError] = useState(false);
 
-  // Dual Import Mode State
-  const [activeImportTab, setActiveImportTab] = useState<'upload' | 'link'>('upload');
-  const [videoLinkInput, setVideoLinkInput] = useState('');
-  const [isImportingLink, setIsImportingLink] = useState(false);
-
   // Custom Video Player States
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-  const [volume, setVolume] = useState(0.8);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSpeedDropdown, setShowSpeedDropdown] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [activeImportTab, setActiveImportTab] = useState<'upload' | 'link'>('upload');
+  const [videoLinkInput, setVideoLinkInput] = useState<string>('');
+  const [isImportingLink, setIsImportingLink] = useState<boolean>(false);
 
-  const t = translations[language];
-
-  // Reset states when the selected file changes
-  useEffect(() => {
-    setVideoError(false);
-    setIsPlaying(false);
-    setCurrentTime(0);
-    setDuration(0);
-    setPlaybackRate(1);
-  }, [selectedFile]);
-
-  // Track fullscreen changes (e.g. from pressing Esc)
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      setIsFullscreen(Boolean(document.fullscreenElement));
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    };
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setErrorMessage(null);
+      setVideoError(false);
+      onFileSelect(file);
+    }
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -110,81 +111,61 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
     setIsDragOver(false);
   };
 
-  const validateAndProcessFile = (file: File) => {
-    setErrorMessage(null);
-    const validExtensions = ['mp4', 'mov', 'webm'];
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    const isValidType =
-      file.type.startsWith('video/') || (ext && validExtensions.includes(ext));
-
-    if (!isValidType) {
-      setErrorMessage('Please upload a valid video file (MP4, MOV, or WebM).');
-      return;
-    }
-
-    onFileSelect(file);
-  };
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      validateAndProcessFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      validateAndProcessFile(e.target.files[0]);
-    }
-  };
-
-  // Video Element Controls & Handlers
-  const handlePlayPause = (e?: React.MouseEvent) => {
-    if (e) {
-      // Prevent clicking dropdowns or sliders from pausing
-      const target = e.target as HTMLElement;
-      if (target.closest('.no-click-pause')) {
-        return;
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      if (file.type.startsWith('video/')) {
+        setErrorMessage(null);
+        setVideoError(false);
+        onFileSelect(file);
+      } else {
+        setErrorMessage('Please drop a valid video file (MP4, MOV, WebM).');
       }
     }
+  };
 
+  const handlePlayPause = () => {
     if (!videoRef.current) return;
     if (isPlaying) {
       videoRef.current.pause();
       setIsPlaying(false);
     } else {
-      videoRef.current.play().catch((err) => console.log('Autoplay play blocked:', err));
-      setIsPlaying(true);
+      videoRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch((err) => {
+        console.warn('Playback blocked or failed:', err);
+      });
+    }
+  };
+
+  const handleTimelineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = parseFloat(e.target.value);
+    setCurrentTime(time);
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
     }
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    setVolume(val);
+    const vol = parseFloat(e.target.value);
+    setVolume(vol);
+    if (vol === 0) setIsMuted(true);
+    else setIsMuted(false);
     if (videoRef.current) {
-      videoRef.current.volume = val;
-      videoRef.current.muted = val === 0;
-      setIsMuted(val === 0);
+      videoRef.current.volume = vol;
     }
   };
 
   const toggleMute = () => {
     if (!videoRef.current) return;
-    const nextMute = !isMuted;
-    setIsMuted(nextMute);
-    videoRef.current.muted = nextMute;
-    if (!nextMute && volume === 0) {
-      setVolume(0.5);
-      videoRef.current.volume = 0.5;
-    }
-  };
-
-  const handleTimelineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    setCurrentTime(val);
-    if (videoRef.current) {
-      videoRef.current.currentTime = val;
+    if (isMuted) {
+      videoRef.current.volume = volume || 0.5;
+      setIsMuted(false);
+    } else {
+      videoRef.current.volume = 0;
+      setIsMuted(true);
     }
   };
 
@@ -225,7 +206,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   const formattedMetaString = `${videoInspection?.sizeMb || `${(selectedFile?.size ? selectedFile.size / (1024 * 1024) : 0).toFixed(1)} MB`}`;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5 animate-fadeIn">
+    <div className="max-w-2xl mx-auto space-y-5 animate-fadeIn text-left">
       <input
         type="file"
         ref={fileInputRef}
@@ -236,7 +217,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
 
       {/* 1. COMPACT CARD CONTAINER */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 -right-24 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
         {!selectedFile ? (
           <div className="space-y-4">
@@ -247,7 +228,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                 onClick={() => setActiveImportTab('upload')}
                 className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                   activeImportTab === 'upload'
-                    ? 'bg-amber-500 text-zinc-950 shadow'
+                    ? 'bg-blue-600 text-white shadow'
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
@@ -259,7 +240,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                 onClick={() => setActiveImportTab('link')}
                 className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                   activeImportTab === 'link'
-                    ? 'bg-amber-500 text-zinc-950 shadow'
+                    ? 'bg-blue-600 text-white shadow'
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
@@ -274,14 +255,14 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl py-8 px-4 text-center cursor-pointer transition-all duration-205 group ${
+                onClick={handleDropzoneClick}
+                className={`border-2 border-dashed rounded-2xl py-8 px-4 text-center cursor-pointer pointer-events-auto relative z-10 transition-all duration-205 group ${
                   isDragOver
-                    ? 'border-amber-400 bg-amber-500/10 scale-[0.99]'
-                    : 'border-zinc-800 hover:border-amber-500/50 bg-zinc-950/60 hover:bg-zinc-950/90'
+                    ? 'border-blue-400 bg-blue-500/10 scale-[0.99]'
+                    : 'border-zinc-800 hover:border-blue-500/50 bg-zinc-950/60 hover:bg-zinc-950/90'
                 }`}
               >
-                <div className="w-12 h-12 mx-auto rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-3 shadow transition-transform group-hover:scale-105">
+                <div className="w-12 h-12 mx-auto rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-sky-400 mb-3 shadow transition-transform group-hover:scale-105">
                   <UploadCloud className="w-6 h-6" />
                 </div>
 
@@ -313,7 +294,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                     value={videoLinkInput}
                     onChange={(e) => setVideoLinkInput(e.target.value)}
                     placeholder="Paste video link (YouTube, TikTok, Facebook, or direct MP4 URL)..."
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-3 text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:border-amber-500"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-3 text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:border-blue-500"
                   />
                 </div>
 
@@ -355,16 +336,16 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                       setErrorMessage(err?.message || 'Failed to import video from link.');
                     }
                   }}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-zinc-950 font-extrabold rounded-xl text-xs sm:text-sm shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-lg shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
                 >
                   {isImportingLink ? (
                     <>
-                      <Sparkles className="w-4 h-4 animate-spin text-zinc-950" />
+                      <Sparkles className="w-4 h-4 animate-spin text-white" />
                       <span>Importing video...</span>
                     </>
                   ) : (
                     <>
-                      <Play className="w-4 h-4 fill-current text-zinc-950" />
+                      <Play className="w-4 h-4 fill-current text-white" />
                       <span>Import Video</span>
                     </>
                   )}
@@ -376,7 +357,6 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
           /* Selected File Information Block */
           <div className="space-y-4">
             
-            {/* Dynamic, Fully Functional Premium Custom Video Player */}
             {videoPreviewUrl && !videoError ? (
               <div 
                 ref={containerRef}
@@ -385,7 +365,6 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                   isFullscreen ? 'h-screen w-screen max-w-none rounded-none border-none' : ''
                 }`}
               >
-                {/* Underlying HTML5 Video Element */}
                 <video
                   ref={videoRef}
                   src={videoPreviewUrl}
@@ -398,7 +377,6 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                   className="w-full h-full object-contain"
                 />
 
-                {/* FILE INFO OVERLAY (Top Header, Readable with Gradient Overlay) */}
                 <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/85 via-black/40 to-transparent pointer-events-none flex items-start justify-between gap-3 text-left">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-extrabold text-white truncate drop-shadow" title={selectedFile.name}>
@@ -409,30 +387,26 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                     </p>
                   </div>
                   <div className="shrink-0 bg-zinc-900/90 backdrop-blur border border-white/10 px-2 py-0.5 rounded-lg">
-                    <span className="text-[9px] font-extrabold text-amber-400 uppercase tracking-wide">
+                    <span className="text-[9px] font-extrabold text-sky-400 uppercase tracking-wide">
                       {formattedMetaString}
                     </span>
                   </div>
                 </div>
 
-                {/* CENTERING PLAY/PAUSE BIG GLOWING BUTTON (Appears when paused) */}
                 {!isPlaying && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none transition-all">
-                    <div className="w-12 h-12 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center shadow-lg transform scale-100 hover:scale-110 transition-transform duration-300">
+                    <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg transform scale-100 hover:scale-110 transition-transform duration-300">
                       <Play className="w-5 h-5 fill-current ml-0.5" />
                     </div>
                   </div>
                 )}
 
-                {/* CUSTOM CONTROL BAR (Bottom, visible on hover or when paused) */}
                 <div 
                   className={`absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/95 via-black/80 to-transparent flex flex-col gap-2.5 transition-all duration-300 no-click-pause ${
                     isPlaying ? 'opacity-0 group-hover/video-player:opacity-100' : 'opacity-100'
                   }`}
-                  onClick={(e) => e.stopPropagation()} // Prevent closing/pausing when interacting with controls
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  
-                  {/* Timeline progress slider */}
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-mono text-zinc-300">
                       {formatTime(currentTime)}
@@ -444,38 +418,34 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                       step={0.1}
                       value={currentTime}
                       onChange={handleTimelineChange}
-                      className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-700 accent-amber-500 hover:accent-amber-400 transition-colors"
+                      className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-700 accent-blue-500 hover:accent-blue-400 transition-colors"
                     />
                     <span className="text-[10px] font-mono text-zinc-300">
                       {formatTime(duration)}
                     </span>
                   </div>
 
-                  {/* Operational Action Row */}
                   <div className="flex items-center justify-between gap-3 text-white">
                     <div className="flex items-center gap-3">
-                      {/* Play/Pause Button */}
                       <button 
                         type="button"
                         onClick={() => handlePlayPause()}
-                        className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                        className="p-1 hover:text-sky-400 transition-colors cursor-pointer"
                         title={isPlaying ? "Pause" : "Play"}
                       >
                         {isPlaying ? <Pause className="w-4.5 h-4.5 fill-current" /> : <Play className="w-4.5 h-4.5 fill-current" />}
                       </button>
 
-                      {/* Sound/Mute Toggle */}
                       <div className="flex items-center gap-1.5 group/volume">
                         <button 
                           type="button"
                           onClick={toggleMute}
-                          className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                          className="p-1 hover:text-sky-400 transition-colors cursor-pointer"
                           title={isMuted ? "Unmute" : "Mute"}
                         >
                           {isMuted || volume === 0 ? <VolumeX className="w-4.5 h-4.5" /> : <Volume2 className="w-4.5 h-4.5" />}
                         </button>
                         
-                        {/* Audio Volume Slider */}
                         <input
                           type="range"
                           min={0}
@@ -483,13 +453,12 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                           step={0.05}
                           value={isMuted ? 0 : volume}
                           onChange={handleVolumeChange}
-                          className="w-16 h-1 rounded-full appearance-none bg-zinc-700 accent-white group-hover/volume:accent-amber-400 transition-colors cursor-pointer"
+                          className="w-16 h-1 rounded-full appearance-none bg-zinc-700 accent-white group-hover/volume:accent-blue-400 transition-colors cursor-pointer"
                         />
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {/* Playback Speed Selector dropdown */}
                       <div className="relative">
                         <button
                           type="button"
@@ -507,8 +476,8 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                                 key={rate}
                                 type="button"
                                 onClick={() => handleSpeedSelect(rate)}
-                                className={`px-2.5 py-1 text-left text-[10px] font-bold hover:bg-amber-500 hover:text-zinc-950 transition-colors ${
-                                  playbackRate === rate ? 'text-amber-400' : 'text-zinc-300'
+                                className={`px-2.5 py-1 text-left text-[10px] font-bold hover:bg-blue-600 hover:text-white transition-colors ${
+                                  playbackRate === rate ? 'text-sky-400' : 'text-zinc-300'
                                 }`}
                               >
                                 {rate}x
@@ -518,11 +487,10 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                         )}
                       </div>
 
-                      {/* Wide Screen / Fullscreen Toggle Button */}
                       <button 
                         type="button"
                         onClick={toggleFullscreen}
-                        className="p-1 hover:text-amber-400 transition-colors cursor-pointer"
+                        className="p-1 hover:text-sky-400 transition-colors cursor-pointer"
                         title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
                       >
                         {isFullscreen ? <Minimize className="w-4.5 h-4.5" /> : <Maximize className="w-4.5 h-4.5" />}
@@ -533,9 +501,8 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                 </div>
               </div>
             ) : (
-              /* Fallback Card Block if no URL or if preview fails */
               <div className="flex items-center gap-3 p-3 bg-zinc-950 border border-zinc-800/80 rounded-2xl animate-fadeIn">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-sky-400 shrink-0">
                   <Film className="w-5 h-5" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -549,17 +516,16 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
               </div>
             )}
 
-            {/* API Warning/Error or Action CTA */}
             {!hasApiKey ? (
-              <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-900/40 text-[11px] text-amber-300 space-y-2">
+              <div className="p-3.5 rounded-xl bg-blue-950/20 border border-blue-900/40 text-[11px] text-blue-300 space-y-2">
                 <div className="font-semibold flex items-center gap-1.5 leading-normal">
-                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-sky-400 shrink-0" />
                   <span>API key required to analyze.</span>
                 </div>
                 <button
                   type="button"
                   onClick={onOpenApiKeySettings}
-                  className="w-full py-2 bg-amber-500 text-zinc-950 font-bold rounded-lg hover:bg-amber-400 transition-colors text-xs"
+                  className="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-lg hover:from-blue-500 hover:to-indigo-500 transition-colors text-xs"
                 >
                   Connect API
                 </button>
@@ -569,7 +535,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                 type="button"
                 disabled={isAnalyzing}
                 onClick={onAnalyzeClick}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-zinc-950 font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 {isAnalyzing ? (
                   <>

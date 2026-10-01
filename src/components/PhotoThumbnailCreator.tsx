@@ -1288,54 +1288,18 @@ export const PhotoThumbnailCreator: React.FC<PhotoThumbnailCreatorProps> = ({
                         setDraggingLayerId(layer.id);
                       }}
                       className={`absolute z-30 cursor-move transition-transform select-none ${
-                        isSelected ? 'ring-2 ring-amber-400 rounded-lg' : 'cursor-pointer hover:ring-1 hover:ring-zinc-600/40'
+                        isSelected ? 'border border-white/80 shadow-sm rounded-lg p-1 sm:p-1.5' : 'cursor-pointer hover:border hover:border-white/40 rounded-lg p-1'
                       }`}
                       style={{
                         left: `${layer.xPercent}%`,
                         top: `${layer.yPercent}%`,
                         transform: 'translate(-50%, -50%)',
-                        width: `${layer.widthPercent ?? 85}%`,
+                        width: 'auto',
+                        display: 'inline-block',
                         maxWidth: '96%',
                         touchAction: 'none',
                       }}
                     >
-                      {/* Left & Right Width Resize Handles */}
-                      {isSelected && (
-                        <>
-                          <div
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setResizingWidthLayerId(layer.id);
-                              setResizeWidthStart({ x: e.clientX, initialWidth: layer.widthPercent ?? 85 });
-                            }}
-                            onTouchStart={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setResizingWidthLayerId(layer.id);
-                              setResizeWidthStart({ x: e.touches[0].clientX, initialWidth: layer.widthPercent ?? 85 });
-                            }}
-                            className="absolute top-1/2 -left-3 -translate-y-1/2 w-3.5 h-9 bg-amber-400 hover:bg-amber-300 rounded-md cursor-ew-resize z-40 shadow-xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95 pointer-events-auto border border-zinc-950"
-                            title="Drag left/right to resize box width"
-                          />
-                          <div
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setResizingWidthLayerId(layer.id);
-                              setResizeWidthStart({ x: e.clientX, initialWidth: layer.widthPercent ?? 85 });
-                            }}
-                            onTouchStart={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setResizingWidthLayerId(layer.id);
-                              setResizeWidthStart({ x: e.touches[0].clientX, initialWidth: layer.widthPercent ?? 85 });
-                            }}
-                            className="absolute top-1/2 -right-3 -translate-y-1/2 w-3.5 h-9 bg-amber-400 hover:bg-amber-300 rounded-md cursor-ew-resize z-40 shadow-xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95 pointer-events-auto border border-zinc-950"
-                            title="Drag left/right to resize box width"
-                          />
-                        </>
-                      )}
                       <div
                         style={{
                           backgroundColor:
@@ -1383,7 +1347,7 @@ export const PhotoThumbnailCreator: React.FC<PhotoThumbnailCreatorProps> = ({
                         </h2>
                       </div>
 
-                      {/* Quick-Delete '✕' Handle for Active Text Layer */}
+                      {/* Quick-Delete '✕' Handle for Active Text Layer (Facebook Style) */}
                       {isSelected && (
                         <button
                           type="button"
@@ -1395,14 +1359,14 @@ export const PhotoThumbnailCreator: React.FC<PhotoThumbnailCreatorProps> = ({
                           }}
                           onMouseDown={(e) => e.stopPropagation()}
                           onTouchStart={(e) => e.stopPropagation()}
-                          className="absolute -top-2.5 -right-2.5 w-6 h-6 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white border-2 border-zinc-950 rounded-full shadow-xl flex items-center justify-center cursor-pointer z-50 transition-all hover:scale-110 group pointer-events-auto"
+                          className="absolute -top-2 -left-2 sm:-top-2.5 sm:-left-2.5 w-4 h-4 bg-white/90 text-zinc-800 rounded-full flex items-center justify-center text-[10px] shadow cursor-pointer z-50 hover:bg-white active:scale-95 transition-all"
                           title="Delete text layer"
                         >
-                          <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                          <X className="w-2.5 h-2.5 stroke-[2.5]" />
                         </button>
                       )}
 
-                      {/* Corner Resize Handle for Text Layer */}
+                      {/* Corner Resize Dot for Text Layer (Facebook Style) */}
                       {isSelected && (
                         <div
                           onMouseDown={(e) => {
@@ -1425,14 +1389,9 @@ export const PhotoThumbnailCreator: React.FC<PhotoThumbnailCreatorProps> = ({
                               initialFontSize: layer.fontSize,
                             });
                           }}
-                          className="absolute -bottom-2.5 -right-2.5 w-6 h-6 bg-amber-400 hover:bg-amber-300 border-2 border-zinc-950 rounded-full shadow-xl cursor-nwse-resize z-40 flex items-center justify-center transition-transform hover:scale-110 active:scale-95 group pointer-events-auto"
+                          className="absolute -bottom-1.5 -right-1.5 w-2.5 h-2.5 bg-white rounded-full shadow-md border border-black/20 cursor-nwse-resize z-40 flex items-center justify-center transition-transform hover:scale-125 active:scale-95"
                           title="Drag corner to scale text size"
-                        >
-                          <div className="w-1.5 h-1.5 bg-zinc-950 rounded-full" />
-                          <span className="absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-700 text-[9px] font-mono text-amber-300 font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-md">
-                            {layer.fontSize}px
-                          </span>
-                        </div>
+                        />
                       )}
                     </div>
                   );

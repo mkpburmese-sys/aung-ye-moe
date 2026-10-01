@@ -93,13 +93,15 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => handleNavClick('home')}
           className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none shrink-0"
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform duration-200 shrink-0">
-            <Video className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white" />
-          </div>
+          <img 
+            src="/favicon.png" 
+            alt="MKP VidPrompts Master Logo" 
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-contain shadow-md shrink-0 group-hover:scale-105 transition-transform duration-200" 
+          />
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-sm sm:text-base tracking-tight text-white group-hover:text-amber-400 transition-colors whitespace-nowrap">
-                MKP VidPrompts <span className="hidden sm:inline text-amber-400 font-semibold text-xs sm:text-sm">Master</span>
+              <span className="font-bold text-sm sm:text-base tracking-tight text-white group-hover:text-sky-400 transition-colors whitespace-nowrap">
+                MKP VidPrompts <span className="hidden sm:inline text-sky-400 font-semibold text-xs sm:text-sm">Master</span>
               </span>
             </div>
             <p className="text-[11px] text-zinc-400 font-medium hidden md:block truncate">
@@ -133,7 +135,7 @@ export const Header: React.FC<HeaderProps> = ({
                   onSelectTab('auth');
                 }
               }}
-              className="relative z-30 cursor-pointer pointer-events-auto px-3.5 py-1.5 sm:px-4 sm:py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold text-xs shadow-md transition-all active:scale-95 whitespace-nowrap"
+              className="relative z-30 cursor-pointer pointer-events-auto px-3.5 py-1.5 sm:px-4 sm:py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-500/20 transition-all active:scale-95 whitespace-nowrap"
             >
               {language === 'mm' ? 'အကောင့်ဖွင့်မည်' : 'Sign Up'}
             </button>
@@ -150,7 +152,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => handleNavClick('home')}
                 className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
                   currentTab === 'home'
-                    ? 'bg-zinc-800 text-amber-400 font-bold'
+                    ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold'
                     : 'hover:bg-zinc-900 hover:text-white'
                 }`}
               >
@@ -162,7 +164,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => handleNavClick('settings')}
                 className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
                   currentTab === 'settings'
-                    ? 'bg-zinc-800 text-amber-400 font-bold'
+                    ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold'
                     : 'hover:bg-zinc-900 hover:text-white'
                 }`}
               >
@@ -174,7 +176,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => handleNavClick('contact')}
                 className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
                   currentTab === 'contact'
-                    ? 'bg-zinc-800 text-amber-400 font-bold'
+                    ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold'
                     : 'hover:bg-zinc-900 hover:text-white'
                 }`}
               >
@@ -186,7 +188,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => handleNavClick('about')}
                 className={`px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
                   currentTab === 'about'
-                    ? 'bg-zinc-800 text-amber-400 font-bold'
+                    ? 'bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold'
                     : 'hover:bg-zinc-900 hover:text-white'
                 }`}
               >

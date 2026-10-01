@@ -69,12 +69,12 @@ export const ApiSettingsView: React.FC<ApiSettingsViewProps> = ({
   const isConnected = status === 'Connected';
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8 text-left animate-fadeIn">
       {/* Header Banner */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xl mb-6">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-sky-400 shrink-0">
               <Key className="w-5 h-5" />
             </div>
             <h2 className="text-xl font-bold text-white tracking-tight">
@@ -87,8 +87,8 @@ export const ApiSettingsView: React.FC<ApiSettingsViewProps> = ({
         </div>
 
         {!isConnected && (
-          <div className="mt-6 p-4 rounded-xl bg-amber-950/20 border border-amber-900/40 text-amber-200/90 text-xs sm:text-sm">
-            <p className="font-semibold text-amber-300">
+          <div className="mt-6 p-4 rounded-xl bg-blue-950/20 border border-blue-900/40 text-blue-200/90 text-xs sm:text-sm">
+            <p className="font-semibold text-blue-300">
               {language === 'mm' ? 'Gemini API Key မချိတ်ရသေးပါ။' : 'Gemini API Key not configured.'}
             </p>
           </div>
@@ -111,7 +111,7 @@ export const ApiSettingsView: React.FC<ApiSettingsViewProps> = ({
                     setInputKey(e.target.value);
                     setLocalFeedback(null);
                   }}
-                  className="w-full px-4 py-3 bg-zinc-950 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 font-mono text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 pr-12"
+                  className="w-full px-4 py-3 bg-zinc-950 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 font-mono text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-12"
                 />
                 <button
                   type="button"
@@ -129,7 +129,7 @@ export const ApiSettingsView: React.FC<ApiSettingsViewProps> = ({
                   type="checkbox"
                   checked={persistOption}
                   onChange={(e) => setPersistOption(e.target.checked)}
-                  className="mt-0.5 rounded border-zinc-700 text-amber-500 focus:ring-amber-500 bg-zinc-950"
+                  className="mt-0.5 rounded border-zinc-700 text-blue-500 focus:ring-blue-500 bg-zinc-950"
                 />
                 <span>
                   {language === 'mm' ? 'ဘရောက်ဇာတွင် မှတ်သားထားမည် (Remember key in browser session)' : 'Remember key in this browser session (stored locally on this device)'}
@@ -141,7 +141,7 @@ export const ApiSettingsView: React.FC<ApiSettingsViewProps> = ({
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-zinc-950 font-semibold rounded-xl text-sm shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-xl text-sm shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{language === 'mm' ? 'ချိတ်ဆက်ရန်' : 'Save & Apply Key'}</span>
@@ -153,7 +153,7 @@ export const ApiSettingsView: React.FC<ApiSettingsViewProps> = ({
                   onClick={handleTest}
                   className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium rounded-xl text-sm transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
-                  {isTesting ? <RefreshCw className="w-4 h-4 animate-spin text-amber-400" /> : <Zap className="w-4 h-4 text-amber-400" />}
+                  {isTesting ? <RefreshCw className="w-4 h-4 animate-spin text-sky-400" /> : <Zap className="w-4 h-4 text-sky-400" />}
                   <span>{language === 'mm' ? 'စမ်းသပ်ရန်' : 'Test Connection'}</span>
                 </button>
 
@@ -194,9 +194,9 @@ export const ApiSettingsView: React.FC<ApiSettingsViewProps> = ({
                   type="button"
                   disabled={isTesting}
                   onClick={handleTest}
-                  className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-medium rounded-xl text-sm transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                  className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-300 font-medium rounded-xl text-sm transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
-                  {isTesting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-amber-400" />}
+                  {isTesting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-sky-400" />}
                   <span>Test Connection</span>
                 </button>
 
@@ -221,7 +221,7 @@ export const ApiSettingsView: React.FC<ApiSettingsViewProps> = ({
           )}
 
           {localFeedback && (
-            <p className="text-xs text-amber-400 pt-1">{localFeedback}</p>
+            <p className="text-xs text-sky-400 pt-1">{localFeedback}</p>
           )}
 
           {statusMessage && (

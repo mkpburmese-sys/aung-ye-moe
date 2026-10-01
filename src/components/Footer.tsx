@@ -1,5 +1,5 @@
 import React from 'react';
-import { Video, Send, Globe, Play, Compass, ExternalLink } from 'lucide-react';
+import { Send, Globe, Play, Compass } from 'lucide-react';
 import { Language } from '../utils/i18n';
 import { SOCIAL_CHANNELS } from './ContactModal';
 
@@ -13,14 +13,12 @@ export const Footer: React.FC<FooterProps> = ({ language = 'mm' }) => {
     <footer className="w-full border-t border-zinc-850/80 bg-zinc-950/80 backdrop-blur-md py-8 px-4 sm:px-6 lg:px-8 mt-16 text-left">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
         
-        {/* Left: Brand info */}
+        {/* Left: Brand info with unified logo */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20 shrink-0">
-            <Video className="w-4.5 h-4.5" />
-          </div>
+          <img src="/favicon.png" alt="MKP VidPrompts Logo" className="w-9 h-9 rounded-xl object-contain shadow-md shrink-0" />
           <div>
             <span className="font-bold text-sm tracking-tight text-white">
-              MKP VidPrompts <span className="text-amber-400 font-medium text-xs">Master</span>
+              MKP VidPrompts <span className="text-sky-400 font-medium text-xs">Master</span>
             </span>
             <p className="text-[11px] text-zinc-500">
               {language === 'mm' ? 'ဗီဒီယိုဖန်တီးသူများအတွက် All-in-One AI Platform' : 'All-in-One AI Video Creation Platform'}
@@ -72,8 +70,9 @@ export const Footer: React.FC<FooterProps> = ({ language = 'mm' }) => {
           </a>
         </div>
 
-        {/* Right: Copyright */}
-        <div className="text-center md:text-right">
+        {/* Right: Copyright with compact logo */}
+        <div className="flex items-center gap-2 text-center md:text-right">
+          <img src="/favicon.png" alt="Logo" className="w-5 h-5 rounded-md object-contain shrink-0 inline-block" />
           <p className="text-xs text-zinc-500 font-medium">
             © 2026 MKP VidPrompts. All rights reserved.
           </p>

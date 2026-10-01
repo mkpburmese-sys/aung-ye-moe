@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, ExternalLink, Globe, Send, Play, Compass } from 'lucide-react';
+import { ExternalLink, Globe, Send, Play, Compass } from 'lucide-react';
 import { Language, translations } from '../utils/i18n';
 
 interface ContactModalProps {
@@ -45,12 +45,10 @@ export const ContactModal: React.FC<ContactModalProps> = ({ language }) => {
   ];
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8 text-left animate-fadeIn">
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
-            <MessageSquare className="w-6 h-6" />
-          </div>
+          <img src="/favicon.png" alt="MKP VidPrompts Logo" className="w-12 h-12 rounded-2xl object-contain shadow-lg shrink-0" />
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">
               {t.contactUs || 'Contact Us'}
@@ -69,7 +67,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ language }) => {
             return (
               <div
                 key={ch.name}
-                className="flex items-center justify-between p-4 rounded-2xl bg-zinc-950 border border-zinc-800/80 hover:border-zinc-750 transition-all duration-300"
+                className="flex items-center justify-between p-4 rounded-2xl bg-zinc-950 border border-zinc-800/80 hover:border-blue-500/30 transition-all duration-300"
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${ch.color} shrink-0`}>
@@ -88,7 +86,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ language }) => {
                     href={ch.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-850 text-amber-400 hover:text-amber-300 font-bold text-xs rounded-xl border border-zinc-850 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-850 text-sky-400 hover:text-sky-300 font-bold text-xs rounded-xl border border-zinc-850 transition-colors"
                   >
                     <span>{t.visit || 'Visit'}</span>
                     <ExternalLink className="w-3.5 h-3.5" />

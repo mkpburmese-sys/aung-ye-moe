@@ -1,5 +1,5 @@
 import React from 'react';
-import { Video, Film, Mic, Sparkles, Image as ImageIcon, BookOpen } from 'lucide-react';
+import { Film, Mic, Sparkles, Image as ImageIcon, BookOpen } from 'lucide-react';
 import { Language } from '../utils/i18n';
 
 interface AboutModalProps {
@@ -22,12 +22,6 @@ export const AboutModal: React.FC<AboutModalProps> = ({ language }) => {
       descMy: 'စာသားကို သဘာဝကျတဲ့ AI အသံအဖြစ် ပြောင်းပါ။',
     },
     {
-      icon: Video,
-      title: 'Video Analyzer',
-      descEn: 'Analyze videos and generate scene-by-scene AI video prompts.',
-      descMy: 'ဗီဒီယိုကို ခွဲခြမ်းပြီး Scene အလိုက် AI Video Prompts ထုတ်ပါ။',
-    },
-    {
       icon: Sparkles,
       title: 'Text-to-Image',
       descEn: 'Create AI images from text.',
@@ -48,17 +42,15 @@ export const AboutModal: React.FC<AboutModalProps> = ({ language }) => {
   ];
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 animate-fadeIn">
+    <div className="max-w-3xl mx-auto px-4 py-8 animate-fadeIn text-left">
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20 shrink-0">
-            <Video className="w-6 h-6" />
-          </div>
+          <img src="/favicon.png" alt="MKP VidPrompts Logo" className="w-12 h-12 rounded-2xl object-contain shadow-lg shrink-0" />
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">
               {language === 'mm' ? 'MKP VidPrompts အကြောင်း' : 'About MKP VidPrompts'}
             </h2>
-            <p className="text-xs text-amber-400 font-semibold">
+            <p className="text-xs text-sky-400 font-semibold">
               {language === 'mm' ? 'AI ကူညီပေးသူ' : 'All-in-One AI Companion'}
             </p>
           </div>
@@ -89,13 +81,13 @@ export const AboutModal: React.FC<AboutModalProps> = ({ language }) => {
               return (
                 <div
                   key={idx}
-                  className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 flex flex-col gap-1 text-left group hover:border-amber-500/40 transition-colors"
+                  className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 flex flex-col gap-1 text-left group hover:border-blue-500/40 transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-sky-400 shrink-0">
                       <Icon className="w-4 h-4" />
                     </div>
-                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-400 transition-colors">
+                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-sky-400 transition-colors">
                       {tool.title}
                     </h4>
                   </div>
@@ -111,7 +103,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({ language }) => {
         {/* Condensed Footer & License */}
         <div className="py-4 px-6 rounded-xl bg-zinc-950 border border-zinc-850 text-center text-xs sm:text-sm text-zinc-500">
           <p className="font-semibold text-zinc-400">v1.2.0 (Premium Release)</p>
-          <p className="mt-1.5">© 2026 MKP VidPrompts. All rights reserved.</p>
+          <p className="mt-1.5 flex items-center justify-center gap-1.5">
+            <img src="/favicon.png" alt="Logo" className="w-4 h-4 rounded object-contain inline-block" />
+            <span>© 2026 MKP VidPrompts. All rights reserved.</span>
+          </p>
         </div>
       </div>
     </div>

@@ -138,7 +138,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       {/* 1. Header Greeting Section - STRICTLY rendered ONLY for logged in users */}
       {user && (
         <div className="space-y-1">
-          <p className="text-amber-500 font-medium text-sm sm:text-base tracking-wide flex items-center gap-2 mb-1">
+          <p className="text-sky-400 font-medium text-sm sm:text-base tracking-wide flex items-center gap-2 mb-1">
             <span>👋</span>
             <span>
               {language === 'mm'
@@ -157,9 +157,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
       {/* 2. Conditionally Rendered "API Key is Required" Alert Card - STRICTLY rendered ONLY for logged-in users without API key */}
       {user && !hasApiKey && (
-        <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-zinc-900 border border-amber-500/30 rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fadeIn">
+        <div className="bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-zinc-900 border border-blue-500/30 rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fadeIn">
           <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-sky-400 shrink-0">
               <Key className="w-5 h-5" />
             </div>
             <div className="space-y-1">
@@ -174,7 +174,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           <button
             type="button"
             onClick={onNavigateToApi}
-            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-zinc-950 font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0 w-full sm:w-auto text-center"
+            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0 w-full sm:w-auto text-center"
           >
             {t.connectApiKeyBtn}
           </button>
@@ -201,26 +201,26 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               <div
                 key={tool.id}
                 onClick={() => handleCardClick(tool.id)}
-                className={`group relative overflow-hidden rounded-2xl p-3.5 sm:p-4 flex flex-col items-start gap-2.5 sm:gap-3 bg-zinc-900/90 hover:bg-zinc-800/80 border transition-all duration-200 cursor-pointer shadow-sm active:scale-[0.98] select-none text-left ${
+                className={`group relative overflow-hidden rounded-2xl p-3.5 sm:p-4 flex flex-col items-start gap-2.5 sm:gap-3 bg-zinc-900/90 hover:bg-zinc-800/80 border transition-all duration-300 cursor-pointer shadow-sm active:scale-[0.98] select-none text-left ${
                   isLocked 
-                    ? 'border-zinc-800 hover:border-amber-500/40 opacity-90' 
-                    : 'border-zinc-800 hover:border-orange-500/30'
+                    ? 'border-zinc-800 hover:border-blue-500/40 opacity-90' 
+                    : 'border-zinc-800 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-900/20'
                 }`}
               >
                 {/* Subtle Ambient Background Glow on Hover */}
-                <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/[0.02] rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/[0.05] transition-all" />
+                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/[0.02] rounded-full blur-2xl pointer-events-none group-hover:bg-blue-500/[0.05] transition-all" />
 
                 {/* Top Row: Left Tool Icon + Right Badge */}
                 <div className="flex items-center justify-between w-full gap-2">
                   {/* Icon Container */}
-                  <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center text-amber-500 shadow-sm transition-all duration-200 group-hover:bg-gradient-to-br group-hover:from-amber-500 group-hover:to-orange-600 group-hover:text-white group-hover:scale-105 shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-sky-400 shadow-sm transition-all duration-300 group-hover:bg-gradient-to-br group-hover:from-blue-600 group-hover:to-indigo-600 group-hover:text-white group-hover:scale-105 shrink-0">
                     <Icon className="w-5 h-5" />
                   </div>
 
                   {/* Right Badge: Lock Badge if locked, else feature badge if present and user is NOT logged in */}
                   {isLocked ? (
-                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-zinc-950/90 border border-amber-500/40 text-[10px] font-bold text-amber-400 shadow-sm leading-none whitespace-nowrap">
-                      <Lock className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-zinc-950/90 border border-blue-500/40 text-[10px] font-bold text-blue-400 shadow-sm leading-none whitespace-nowrap">
+                      <Lock className="w-2.5 h-2.5 text-blue-400 shrink-0" />
                       <span className="hidden min-[400px]:inline">
                         {language === 'mm' ? 'သော့ခတ်ထားသည်' : 'Locked'}
                       </span>
@@ -236,7 +236,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
                 {/* Information Info Block (Title only, no truncation) */}
                 <div className="w-full">
-                  <h3 className="text-xs sm:text-sm font-bold text-white tracking-wide transition-colors group-hover:text-amber-400 leading-snug">
+                  <h3 className="text-xs sm:text-sm font-bold text-white tracking-wide transition-colors group-hover:text-sky-400 leading-snug">
                     {tool.title}
                   </h3>
                 </div>
@@ -263,9 +263,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
             {/* Step 1 */}
-            <div className="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-2.5 hover:border-zinc-700 transition-colors">
+            <div className="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-2.5 hover:border-blue-500/40 transition-colors">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-bold text-xs shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-sky-400 font-bold text-xs shrink-0">
                   1
                 </div>
                 <h3 className="text-sm font-bold text-white">
@@ -280,9 +280,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </div>
 
             {/* Step 2 */}
-            <div className="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-2.5 hover:border-zinc-700 transition-colors">
+            <div className="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-2.5 hover:border-blue-500/40 transition-colors">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-xs shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-xs shrink-0">
                   2
                 </div>
                 <h3 className="text-sm font-bold text-white">
@@ -297,9 +297,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </div>
 
             {/* Step 3 */}
-            <div className="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-2.5 hover:border-zinc-700 transition-colors">
+            <div className="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-2.5 hover:border-blue-500/40 transition-colors">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 font-bold text-xs shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 font-bold text-xs shrink-0">
                   3
                 </div>
                 <h3 className="text-sm font-bold text-white">
